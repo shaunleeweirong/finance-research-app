@@ -1,0 +1,110 @@
+<h2>Company Profile Page Layout</h2>
+<p class="subtitle">How should the main stock page be structured? Think: user searches "AAPL" and lands here.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Tabbed Layout (Fiscal.ai style)</h3>
+      <p>Company header with price at top. Tabs below: Overview | Financials | Valuation | Documents | News</p>
+      <div class="mockup" style="margin-top: 12px;">
+        <div class="mockup-body" style="font-family: monospace; font-size: 11px; line-height: 1.6; color: #94a3b8;">
+<pre style="margin:0; color: inherit;">
+┌─────────────────────────────────────────────────┐
+│  🔍 Search...                        [AAPL ▾]  │
+├─────────────────────────────────────────────────┤
+│  AAPL  Apple Inc.          $198.42  +1.23%      │
+│  Technology · Consumer Electronics · $3.04T     │
+├─────────────────────────────────────────────────┤
+│  Overview │ Financials │ Valuation │ Docs │ News│
+├─────────────────────────────────────────────────┤
+│                                                 │
+│  ┌─── Price Chart ──────────────────────┐       │
+│  │  📈 Interactive stock price chart    │       │
+│  │     1D  1W  1M  3M  6M  1Y  5Y ALL  │       │
+│  └──────────────────────────────────────┘       │
+│                                                 │
+│  ┌─ Key Metrics ─┐  ┌─ Company Info ──────┐    │
+│  │ P/E    28.4   │  │ CEO: Tim Cook       │    │
+│  │ EPS    $6.97  │  │ Employees: 164,000  │    │
+│  │ Div    0.65%  │  │ Founded: 1976       │    │
+│  │ Beta   1.24   │  │ HQ: Cupertino, CA   │    │
+│  └───────────────┘  └─────────────────────┘    │
+│                                                 │
+└─────────────────────────────────────────────────┘
+</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Single Scroll Page</h3>
+      <p>Everything on one long page. Header → Price Chart → Key Metrics → Financials → News. No tabs.</p>
+      <div class="mockup" style="margin-top: 12px;">
+        <div class="mockup-body" style="font-family: monospace; font-size: 11px; line-height: 1.6; color: #94a3b8;">
+<pre style="margin:0; color: inherit;">
+┌─────────────────────────────────────────────────┐
+│  🔍 Search...                                   │
+├─────────────────────────────────────────────────┤
+│  AAPL  Apple Inc.          $198.42  +1.23%      │
+├─────────────────────────────────────────────────┤
+│  ┌─── Price Chart ──────────────────────┐       │
+│  │  📈 Full-width interactive chart     │       │
+│  └──────────────────────────────────────┘       │
+│  ── Key Metrics ──────────────────────────      │
+│  P/E  28.4 │ EPS  $6.97 │ Div  0.65% │ ...    │
+│  ── Income Statement ─────────────────────      │
+│  Revenue | Net Income | Margins (chart)         │
+│  ── Balance Sheet ────────────────────────      │
+│  Assets | Liabilities | Equity (chart)          │
+│  ── Cash Flow ────────────────────────────      │
+│  Operating | Investing | Financing              │
+│  ── Latest News ──────────────────────────      │
+│  • Article 1...                                 │
+│  • Article 2...                                 │
+│  ── SEC Filings ──────────────────────────      │
+│  10-K (2025) │ 10-Q (Q1 2026) │ ...            │
+│                                    ↓ scroll     │
+└─────────────────────────────────────────────────┘
+</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Sidebar + Content (Bloomberg-style)</h3>
+      <p>Left sidebar with company nav/watchlist. Main area shows selected section. Denser, power-user feel.</p>
+      <div class="mockup" style="margin-top: 12px;">
+        <div class="mockup-body" style="font-family: monospace; font-size: 11px; line-height: 1.6; color: #94a3b8;">
+<pre style="margin:0; color: inherit;">
+┌──────────┬──────────────────────────────────────┐
+│ 🔍 Search│  AAPL · Apple Inc · $198.42 (+1.23%)│
+├──────────┼──────────────────────────────────────┤
+│          │                                      │
+│ Overview │  ┌─── Price Chart ────────────┐      │
+│ Financ.  │  │  📈 Interactive chart      │      │
+│ Valuat.  │  └────────────────────────────┘      │
+│ Docs     │                                      │
+│ News     │  ┌─ Metrics ──┐ ┌─ Profile ───┐     │
+│ Filings  │  │ P/E  28.4  │ │ Sector: Tech│     │
+│          │  │ EPS  $6.97 │ │ MCap: $3.04T│     │
+│──────────│  │ ROE  160%  │ │ Emp: 164K   │     │
+│ Watchlist│  └────────────┘ └─────────────┘     │
+│ · MSFT   │                                      │
+│ · GOOGL  │  ┌─ Revenue Trend ────────────┐     │
+│ · AMZN   │  │  📊 Bar chart (5yr)        │     │
+│ · NVDA   │  └────────────────────────────┘     │
+│          │                                      │
+└──────────┴──────────────────────────────────────┘
+</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
