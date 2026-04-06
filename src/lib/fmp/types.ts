@@ -371,6 +371,69 @@ export type FMPFinancialStatement =
   | FMPBalanceSheet
   | FMPCashFlowStatement;
 
+export interface FMPStockNews {
+  symbol: string;
+  publishedDate: string;
+  title: string;
+  image: string | null;
+  site: string;
+  text: string;
+  url: string;
+}
+
+export interface FMPSecFiling {
+  symbol: string;
+  fillingDate: string;
+  acceptedDate: string;
+  cik: string;
+  type: string;
+  link: string;
+  finalLink: string;
+}
+
+export interface FMPAnalystEstimate {
+  symbol: string;
+  date: string;
+  estimatedRevenueLow: number | null;
+  estimatedRevenueHigh: number | null;
+  estimatedRevenueAvg: number | null;
+  estimatedEbitdaLow: number | null;
+  estimatedEbitdaHigh: number | null;
+  estimatedEbitdaAvg: number | null;
+  estimatedNetIncomeLow: number | null;
+  estimatedNetIncomeHigh: number | null;
+  estimatedNetIncomeAvg: number | null;
+  estimatedEpsAvg: number | null;
+  estimatedEpsHigh: number | null;
+  estimatedEpsLow: number | null;
+  numberAnalystEstimatedRevenue: number | null;
+  numberAnalystsEstimatedEps: number | null;
+}
+
+export interface FMPInstitutionalHolder {
+  holder: string;
+  shares: number | null;
+  dateReported: string;
+  change: number | null;
+}
+
+export interface FMPInsiderTrade {
+  symbol: string;
+  filingDate: string;
+  transactionDate: string;
+  reportingCik: string;
+  transactionType: string;
+  securitiesOwned: number | null;
+  companyCik: string;
+  reportingName: string;
+  typeOfOwner: string;
+  acquistionOrDisposition: string;
+  formType: string;
+  securitiesTransacted: number | null;
+  price: number | null;
+  link: string;
+}
+
 export interface FinancialRecord {
   date: string;
   symbol: string;

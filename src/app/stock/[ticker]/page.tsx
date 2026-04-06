@@ -10,6 +10,11 @@ import {
   getBalanceSheet,
   getCashFlowStatement,
   getRatios,
+  getStockNews,
+  getSecFilings,
+  getAnalystEstimates,
+  getInstitutionalHolders,
+  getInsiderTrading,
 } from '@/lib/fmp';
 import { CompanyHeader } from '@/components/stock/company-header';
 import { TabNavigation } from '@/components/stock/tab-navigation';
@@ -17,7 +22,10 @@ import { PriceChart } from '@/components/stock/overview/price-chart';
 import { KeyMetrics } from '@/components/stock/overview/key-metrics';
 import { CompanyProfile } from '@/components/stock/overview/company-profile';
 import { FinancialsView } from '@/components/stock/financials/financials-view';
-import { PlaceholderTab } from '@/components/placeholder-tab';
+import { NewsTab } from '@/components/stock/news/news-tab';
+import { FilingsTab } from '@/components/stock/filings/filings-tab';
+import { EstimatesTab } from '@/components/stock/estimates/estimates-tab';
+import { OwnershipTab } from '@/components/stock/ownership/ownership-tab';
 import { SearchBar } from '@/components/search/search-bar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getDateRangeForPeriod } from '@/lib/utils/chart-helpers';
@@ -41,17 +49,26 @@ export default async function StockPage({
   // Fetch all data in parallel
   const { from, to } = getDateRangeForPeriod('1Y');
 
-  const [profile, quote, historicalData, keyMetricsData, incomeData, balanceData, cashflowData, ratiosData] =
-    await Promise.all([
-      getCompanyProfile(upperTicker),
-      getQuote(upperTicker),
-      getHistoricalPrices(upperTicker, from, to),
-      getKeyMetrics(upperTicker),
-      getIncomeStatement(upperTicker, 'annual', 10),
-      getBalanceSheet(upperTicker, 'annual', 10),
-      getCashFlowStatement(upperTicker, 'annual', 10),
-      getRatios(upperTicker, 'annual', 10),
-    ]);
+  const [
+    profile, quote, historicalData, keyMetricsData,
+    incomeData, balanceData, cashflowData, ratiosData,
+    newsData, filingsData, estimatesData, holdersData, insiderData,
+  ] = await Promise.all([
+    getCompanyProfile(upperTicker),
+    getQuote(upperTicker),
+    getHistoricalPrices(upperTicker, from, to),
+    getKeyMetrics(upperTicker),
+    getIncomeStatement(upperTicker, 'annual', 10),
+    getBalanceSheet(upperTicker, 'annual', 10),
+    getCashFlowStatement(upperTicker, 'annual', 10),
+    getRatios(upperTicker, 'annual', 10),
+    // Tab-specific data — only fetch when needed
+    tab === 'news' ? getStockNews(upperTicker, 20) : Promise.resolve([]),
+    tab === 'filings' ? getSecFilings(upperTicker, undefined, 40) : Promise.resolve([]),
+    tab === 'estimates' ? getAnalystEstimates(upperTicker) : Promise.resolve([]),
+    tab === 'ownership' ? getInstitutionalHolders(upperTicker) : Promise.resolve([]),
+    tab === 'ownership' ? getInsiderTrading(upperTicker, 20) : Promise.resolve([]),
+  ]);
 
   // If no profile found, show 404
   if (!profile) {
@@ -114,15 +131,19 @@ export default async function StockPage({
           />
         );
       case 'news':
-        return <PlaceholderTab tabName="News" />;
+        return <NewsTab news={newsData} />;
       case 'estimates':
-        return <PlaceholderTab tabName="Estimates" />;
+        return <EstimatesTab estimates={estimatesData} />;
       case 'ownership':
-        return <PlaceholderTab tabName="Ownership" />;
+        return <OwnershipTab holders={holdersData} insiderTrades={insiderData} />;
       case 'filings':
-        return <PlaceholderTab tabName="Filings" />;
+        return <FilingsTab filings={filingsData} />;
       default:
-        return <PlaceholderTab tabName={activeTab} />;
+        return (
+          <div className="rounded-lg border border-border bg-surface p-12 text-center text-text-muted">
+            Tab not found
+          </div>
+        );
     }
   }
 
