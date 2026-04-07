@@ -13,6 +13,9 @@ import {
   getStockNews,
   getSecFilings,
   getAnalystEstimates,
+  getPriceTargetConsensus,
+  getPriceTargetSummary,
+  getPriceTargets,
   getInstitutionalHolders,
   getInsiderTrading,
 } from '@/lib/fmp';
@@ -52,7 +55,9 @@ export default async function StockPage({
   const [
     profile, quote, historicalData, keyMetricsData,
     incomeData, balanceData, cashflowData, ratiosData,
-    newsData, filingsData, estimatesData, holdersData, insiderData,
+    newsData, filingsData, estimatesData,
+    priceTargetConsensus, priceTargetSummary, priceTargets,
+    holdersData, insiderData,
   ] = await Promise.all([
     getCompanyProfile(upperTicker),
     getQuote(upperTicker),
@@ -66,6 +71,9 @@ export default async function StockPage({
     tab === 'news' ? getStockNews(upperTicker, 20) : Promise.resolve([]),
     tab === 'filings' ? getSecFilings(upperTicker, undefined, 40) : Promise.resolve([]),
     tab === 'estimates' ? getAnalystEstimates(upperTicker) : Promise.resolve([]),
+    tab === 'estimates' ? getPriceTargetConsensus(upperTicker) : Promise.resolve(null),
+    tab === 'estimates' ? getPriceTargetSummary(upperTicker) : Promise.resolve(null),
+    tab === 'estimates' ? getPriceTargets(upperTicker, 15) : Promise.resolve([]),
     tab === 'ownership' ? getInstitutionalHolders(upperTicker) : Promise.resolve([]),
     tab === 'ownership' ? getInsiderTrading(upperTicker, 20) : Promise.resolve([]),
   ]);
@@ -133,7 +141,16 @@ export default async function StockPage({
       case 'news':
         return <NewsTab news={newsData} />;
       case 'estimates':
-        return <EstimatesTab estimates={estimatesData} />;
+        return (
+          <EstimatesTab
+            estimates={estimatesData}
+            actuals={incomeData ?? []}
+            currentPrice={resolvedQuote.price}
+            priceTargetConsensus={priceTargetConsensus}
+            priceTargetSummary={priceTargetSummary}
+            priceTargets={priceTargets}
+          />
+        );
       case 'ownership':
         return <OwnershipTab holders={holdersData} insiderTrades={insiderData} />;
       case 'filings':

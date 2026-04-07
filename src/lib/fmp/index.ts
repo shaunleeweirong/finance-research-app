@@ -7,6 +7,7 @@ export { getRatios, getKeyMetrics } from './endpoints/ratios';
 export { getStockNews } from './endpoints/news';
 export { getSecFilings } from './endpoints/filings';
 export { getAnalystEstimates } from './endpoints/estimates';
+export { getPriceTargetConsensus, getPriceTargetSummary, getPriceTargets } from './endpoints/price-target';
 export { getInstitutionalHolders, getInsiderTrading } from './endpoints/ownership';
 export { FMPError } from './client';
 export type * from './types';

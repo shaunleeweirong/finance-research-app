@@ -410,6 +410,41 @@ export interface FMPAnalystEstimate {
   numberAnalystsEstimatedEps: number | null;
 }
 
+export interface FMPPriceTargetConsensus {
+  symbol: string;
+  targetHigh: number | null;
+  targetLow: number | null;
+  targetConsensus: number | null;
+  targetMedian: number | null;
+}
+
+export interface FMPPriceTargetSummary {
+  symbol: string;
+  lastMonth: number | null;
+  lastMonthAvgPriceTarget: number | null;
+  lastQuarter: number | null;
+  lastQuarterAvgPriceTarget: number | null;
+  lastYear: number | null;
+  lastYearAvgPriceTarget: number | null;
+  allTime: number | null;
+  allTimeAvgPriceTarget: number | null;
+  publishers: string;
+}
+
+export interface FMPPriceTarget {
+  symbol: string;
+  publishedDate: string;
+  newsURL: string;
+  newsTitle: string;
+  analystName: string | null;
+  priceTarget: number | null;
+  adjPriceTarget: number | null;
+  priceWhenPosted: number | null;
+  newsPublisher: string;
+  newsBaseURL: string;
+  analystCompany: string | null;
+}
+
 export interface FMPInstitutionalHolder {
   holder: string;
   shares: number | null;
