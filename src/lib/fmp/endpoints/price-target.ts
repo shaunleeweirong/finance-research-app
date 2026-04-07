@@ -45,12 +45,12 @@ export async function getPriceTargetSummary(
 
 export async function getPriceTargets(
   ticker: string,
-  limit: number = 20,
+  limit: number = 0,
 ): Promise<FMPPriceTarget[]> {
   const results = await fetchV4<FMPPriceTarget[]>(
     `/price-target?symbol=${ticker}`,
     21600, // 6h
     [],
   );
-  return results.slice(0, limit);
+  return limit > 0 ? results.slice(0, limit) : results;
 }

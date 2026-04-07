@@ -73,7 +73,7 @@ export default async function StockPage({
     tab === 'estimates' ? getAnalystEstimates(upperTicker) : Promise.resolve([]),
     tab === 'estimates' ? getPriceTargetConsensus(upperTicker) : Promise.resolve(null),
     tab === 'estimates' ? getPriceTargetSummary(upperTicker) : Promise.resolve(null),
-    tab === 'estimates' ? getPriceTargets(upperTicker, 15) : Promise.resolve([]),
+    tab === 'estimates' ? getPriceTargets(upperTicker) : Promise.resolve([]),
     tab === 'ownership' ? getInstitutionalHolders(upperTicker) : Promise.resolve([]),
     tab === 'ownership' ? getInsiderTrading(upperTicker, 20) : Promise.resolve([]),
   ]);

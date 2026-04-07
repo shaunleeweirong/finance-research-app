@@ -482,7 +482,69 @@ function formatDate(dateStr: string): string {
   });
 }
 
+// Compute a centered rolling average over a series of points
+function computeRollingAverage(
+  values: (number | null)[],
+  window: number,
+): (number | null)[] {
+  const result: (number | null)[] = [];
+  for (let i = 0; i < values.length; i++) {
+    const half = Math.floor(window / 2);
+    const start = Math.max(0, i - half);
+    const end = Math.min(values.length, i + half + 1);
+    const slice = values.slice(start, end).filter((v): v is number => v != null);
+    if (slice.length === 0) {
+      result.push(null);
+    } else {
+      result.push(slice.reduce((a, b) => a + b, 0) / slice.length);
+    }
+  }
+  return result;
+}
+
 function PriceTargetsView({ consensus, summary, targets, currentPrice }: PriceTargetsViewProps) {
+  // Calculate upside vs current price
+  const consensusUpside =
+    consensus?.targetConsensus != null && currentPrice != null && currentPrice > 0
+      ? ((consensus.targetConsensus - currentPrice) / currentPrice) * 100
+      : null;
+
+  // Build chronological history chart data (oldest -> newest, with rolling average)
+  const historyChartData = useMemo(() => {
+    if (targets.length === 0) return [];
+    const sorted = [...targets].sort(
+      (a, b) => new Date(a.publishedDate).getTime() - new Date(b.publishedDate).getTime(),
+    );
+    const targetValues = sorted.map((t) => t.priceTarget);
+    const window = Math.min(10, Math.max(3, Math.floor(sorted.length / 8)));
+    const rolling = computeRollingAverage(targetValues, window);
+    return sorted.map((t, i) => ({
+      date: t.publishedDate,
+      target: t.priceTarget,
+      rolling: rolling[i],
+      analyst: t.analystName,
+      firm: t.analystCompany,
+      priceWhenPosted: t.priceWhenPosted,
+    }));
+  }, [targets]);
+
+  // Stat card data — honest, no fake timeline
+  const statCards = summary
+    ? [
+        { label: 'Last Month', avg: summary.lastMonthAvgPriceTarget, count: summary.lastMonth },
+        { label: 'Last Quarter', avg: summary.lastQuarterAvgPriceTarget, count: summary.lastQuarter },
+        { label: 'Last Year', avg: summary.lastYearAvgPriceTarget, count: summary.lastYear },
+        { label: 'All Time', avg: summary.allTimeAvgPriceTarget, count: summary.allTime },
+      ]
+    : [];
+
+  // Most recent calls table — capped at 25
+  const recentTargets = useMemo(() => {
+    return [...targets]
+      .sort((a, b) => new Date(b.publishedDate).getTime() - new Date(a.publishedDate).getTime())
+      .slice(0, 25);
+  }, [targets]);
+
   if (!consensus && !summary && targets.length === 0) {
     return (
       <Card className="bg-surface border-border p-12 text-center">
@@ -490,22 +552,6 @@ function PriceTargetsView({ consensus, summary, targets, currentPrice }: PriceTa
       </Card>
     );
   }
-
-  // Calculate upside vs current price
-  const consensusUpside =
-    consensus?.targetConsensus != null && currentPrice != null && currentPrice > 0
-      ? ((consensus.targetConsensus - currentPrice) / currentPrice) * 100
-      : null;
-
-  // Build summary chart data
-  const summaryChartData = summary
-    ? [
-        { period: 'Last Month', avg: summary.lastMonthAvgPriceTarget, count: summary.lastMonth },
-        { period: 'Last Quarter', avg: summary.lastQuarterAvgPriceTarget, count: summary.lastQuarter },
-        { period: 'Last Year', avg: summary.lastYearAvgPriceTarget, count: summary.lastYear },
-        { period: 'All Time', avg: summary.allTimeAvgPriceTarget, count: summary.allTime },
-      ].filter((p) => p.avg != null)
-    : [];
 
   return (
     <div className="space-y-6">
@@ -552,19 +598,52 @@ function PriceTargetsView({ consensus, summary, targets, currentPrice }: PriceTa
         </Card>
       )}
 
-      {/* Time-windowed Summary Chart */}
-      {summaryChartData.length > 0 && (
+      {/* Time-windowed Average Stat Cards (replaces the misleading line chart) */}
+      {statCards.length > 0 && (
+        <div>
+          <h3 className="mb-3 text-sm font-medium text-text-secondary">Average Target by Time Window</h3>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {statCards.map((stat) => (
+              <Card key={stat.label} className="bg-surface border-border p-4">
+                <p className="text-xs text-text-muted">{stat.label}</p>
+                <p className={`mt-1 font-mono text-xl font-semibold ${stat.avg != null ? 'text-foreground' : 'text-text-muted'}`}>
+                  {stat.avg != null ? formatTargetPrice(stat.avg) : '—'}
+                </p>
+                <p className="mt-1 text-xs text-text-muted">
+                  {stat.count != null && stat.count > 0
+                    ? `${stat.count} analyst${stat.count === 1 ? '' : 's'}`
+                    : 'No coverage'}
+                </p>
+              </Card>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-text-muted italic">
+            Each window is independent — they overlap and aggregate the same underlying calls.
+          </p>
+        </div>
+      )}
+
+      {/* Real chronological history chart */}
+      {historyChartData.length > 0 && (
         <Card className="bg-surface border-border p-6">
-          <h3 className="mb-4 text-base font-semibold text-foreground">Price Target Average by Time Period</h3>
-          <div className="h-56">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-base font-semibold text-foreground">Analyst Price Target History</h3>
+            <span className="text-xs text-text-muted">{historyChartData.length} calls</span>
+          </div>
+          <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={summaryChartData} margin={{ top: 10, right: 20, bottom: 5, left: 10 }}>
+              <ComposedChart data={historyChartData} margin={{ top: 10, right: 20, bottom: 5, left: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                 <XAxis
-                  dataKey="period"
+                  dataKey="date"
                   tick={{ fill: '#64748b', fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
+                  tickFormatter={(v: string) => {
+                    const d = new Date(v);
+                    return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+                  }}
+                  minTickGap={40}
                 />
                 <YAxis
                   tick={{ fill: '#64748b', fontSize: 11 }}
@@ -577,13 +656,35 @@ function PriceTargetsView({ consensus, summary, targets, currentPrice }: PriceTa
                 <Tooltip
                   content={({ active, payload }) => {
                     if (!active || !payload || payload.length === 0) return null;
-                    const data = payload[0]?.payload as { period: string; avg: number; count: number } | undefined;
+                    const data = payload[0]?.payload as
+                      | {
+                          date: string;
+                          target: number | null;
+                          analyst: string | null;
+                          firm: string | null;
+                          priceWhenPosted: number | null;
+                        }
+                      | undefined;
                     if (!data) return null;
                     return (
                       <div className="rounded-lg border border-border bg-card p-3 text-xs shadow-xl">
-                        <div className="mb-1 font-semibold text-foreground">{data.period}</div>
-                        <div className="font-mono text-foreground">{formatTargetPrice(data.avg)}</div>
-                        <div className="text-text-muted">{data.count} analyst{data.count === 1 ? '' : 's'}</div>
+                        <div className="mb-1 font-semibold text-foreground">
+                          {new Date(data.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                        </div>
+                        {data.analyst && (
+                          <div className="text-text-secondary">{data.analyst}</div>
+                        )}
+                        {data.firm && <div className="text-text-muted">{data.firm}</div>}
+                        <div className="mt-1 flex justify-between gap-4 border-t border-border pt-1">
+                          <span className="text-text-muted">Target</span>
+                          <span className="font-mono text-foreground">{formatTargetPrice(data.target)}</span>
+                        </div>
+                        {data.priceWhenPosted != null && (
+                          <div className="flex justify-between gap-4">
+                            <span className="text-text-muted">Price then</span>
+                            <span className="font-mono text-text-secondary">{formatTargetPrice(data.priceWhenPosted)}</span>
+                          </div>
+                        )}
                       </div>
                     );
                   }}
@@ -602,24 +703,49 @@ function PriceTargetsView({ consensus, summary, targets, currentPrice }: PriceTa
                     }}
                   />
                 )}
+                {/* Individual analyst calls — dots only, no line */}
                 <Line
                   type="monotone"
-                  dataKey="avg"
+                  dataKey="target"
+                  stroke="transparent"
+                  dot={{ fill: '#3b82f6', r: 3, strokeWidth: 0, fillOpacity: 0.6 }}
+                  isAnimationActive={false}
+                />
+                {/* Smoothed rolling average */}
+                <Line
+                  type="monotone"
+                  dataKey="rolling"
                   stroke="#3b82f6"
-                  strokeWidth={2.5}
-                  dot={{ fill: '#3b82f6', r: 5, strokeWidth: 0 }}
+                  strokeWidth={2}
+                  dot={false}
+                  connectNulls
                   isAnimationActive={false}
                 />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs text-text-muted">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-primary opacity-60" />
+              <span>Individual analyst call</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-0.5 w-6 bg-primary" />
+              <span>Rolling average</span>
+            </div>
+          </div>
         </Card>
       )}
 
-      {/* Recent Analyst Activity Table */}
-      {targets.length > 0 && (
+      {/* Recent Analyst Activity Table — capped at 25 */}
+      {recentTargets.length > 0 && (
         <div>
-          <h3 className="mb-3 text-sm font-medium text-text-secondary">Recent Analyst Activity</h3>
+          <h3 className="mb-3 text-sm font-medium text-text-secondary">
+            Recent Analyst Activity{' '}
+            <span className="text-text-muted font-normal">
+              (showing {recentTargets.length} of {targets.length})
+            </span>
+          </h3>
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-sm">
               <thead>
@@ -632,7 +758,7 @@ function PriceTargetsView({ consensus, summary, targets, currentPrice }: PriceTa
                 </tr>
               </thead>
               <tbody>
-                {targets.map((t, i) => {
+                {recentTargets.map((t, i) => {
                   const upside =
                     t.priceTarget != null && t.priceWhenPosted != null && t.priceWhenPosted > 0
                       ? ((t.priceTarget - t.priceWhenPosted) / t.priceWhenPosted) * 100
