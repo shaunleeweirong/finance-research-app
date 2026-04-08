@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Slider } from '@/components/ui/slider';
 import { CHART_COLORS } from '@/lib/utils/chart-helpers';
 import { formatInUnit, type DataUnit } from '@/lib/utils/format';
 import type { SegmentPeriod } from '@/lib/fmp/types';
@@ -156,11 +157,15 @@ function StackedBarChart({
   allSegmentKeys,
   visibleKeys,
   activeUnit,
+  yearRange,
+  onYearRangeChange,
 }: {
   chartData: ChartRow[];
   allSegmentKeys: string[];
   visibleKeys: string[];
   activeUnit: DataUnit;
+  yearRange: [number, number];
+  onYearRangeChange: (range: [number, number]) => void;
 }) {
   // Color map: segments keep their color even if some are hidden
   const colorByKey = useMemo(() => {
@@ -171,16 +176,30 @@ function StackedBarChart({
     return map;
   }, [allSegmentKeys]);
 
+  const [startIdx, endIdx] = yearRange;
+  const visibleChartData = chartData.slice(startIdx, endIdx + 1);
+  const maxIdx = Math.max(0, chartData.length - 1);
+  const isFullRange = startIdx === 0 && endIdx === maxIdx;
+  const startLabel = chartData[startIdx]?.year;
+  const endLabel = chartData[endIdx]?.year;
+
   return (
     <Card className="bg-surface border-border p-4 h-full">
-      <h4 className="mb-3 text-sm font-medium text-text-secondary">
-        Historical Mix
-        {visibleKeys.length < allSegmentKeys.length && visibleKeys.length > 0 && (
-          <span className="ml-2 text-xs text-text-muted font-normal">
-            (showing {visibleKeys.length} of {allSegmentKeys.length} segments)
+      <div className="mb-3 flex items-baseline justify-between flex-wrap gap-2">
+        <h4 className="text-sm font-medium text-text-secondary">
+          Historical Mix
+          {visibleKeys.length < allSegmentKeys.length && visibleKeys.length > 0 && (
+            <span className="ml-2 text-xs text-text-muted font-normal">
+              (showing {visibleKeys.length} of {allSegmentKeys.length} segments)
+            </span>
+          )}
+        </h4>
+        {startLabel && endLabel && (
+          <span className="text-xs text-text-muted">
+            {startLabel} – {endLabel}
           </span>
         )}
-      </h4>
+      </div>
       <div className="h-96">
         {visibleKeys.length === 0 ? (
           <div className="flex h-full items-center justify-center text-text-muted text-sm">
@@ -188,7 +207,7 @@ function StackedBarChart({
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 10, right: 10, bottom: 5, left: 10 }}>
+            <BarChart data={visibleChartData} margin={{ top: 10, right: 10, bottom: 5, left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
               <XAxis
                 dataKey="year"
@@ -259,6 +278,40 @@ function StackedBarChart({
           </ResponsiveContainer>
         )}
       </div>
+
+      {/* Year range slider */}
+      {chartData.length > 2 && visibleKeys.length > 0 && (
+        <div className="mt-4 pt-3 border-t border-border">
+          <div className="flex items-center justify-between mb-2 text-[11px] text-text-muted">
+            <span>{chartData[0]?.year}</span>
+            <span className="text-text-secondary">Drag to adjust year range</span>
+            <span>{chartData[maxIdx]?.year}</span>
+          </div>
+          <Slider
+            min={0}
+            max={maxIdx}
+            step={1}
+            value={yearRange}
+            onValueChange={(v) => {
+              const arr = Array.isArray(v) ? v : [v];
+              if (arr.length >= 2) {
+                onYearRangeChange([arr[0], arr[1]]);
+              }
+            }}
+            className="w-full"
+          />
+          {!isFullRange && (
+            <div className="mt-2 flex justify-center">
+              <button
+                onClick={() => onYearRangeChange([0, maxIdx])}
+                className="text-[11px] text-text-muted hover:text-foreground transition-colors"
+              >
+                Reset range
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </Card>
   );
 }
@@ -389,6 +442,7 @@ function SegmentsTable({
 export function SegmentsView({ productData, geographicData, activeUnit }: SegmentsViewProps) {
   const [activeType, setActiveType] = useState<SegmentationType>('product');
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [yearRange, setYearRange] = useState<[number, number]>([0, 0]);
 
   const hasProductData = productData.length > 0;
   const hasGeoData = geographicData.length > 0;
@@ -407,6 +461,12 @@ export function SegmentsView({ productData, geographicData, activeUnit }: Segmen
   useEffect(() => {
     setSelectedKeys(new Set(segmentKeys));
   }, [segmentKeys]);
+
+  // Reset year range to full when data length changes (switching Product/Geographic)
+  useEffect(() => {
+    const maxIdx = Math.max(0, chartData.length - 1);
+    setYearRange([0, maxIdx]);
+  }, [chartData.length]);
 
   // Filter chart and table data based on selection, keep original ordering for colors
   const visibleSegmentKeys = useMemo(
@@ -499,12 +559,14 @@ export function SegmentsView({ productData, geographicData, activeUnit }: Segmen
               allSegmentKeys={segmentKeys}
               visibleKeys={visibleSegmentKeys}
               activeUnit={activeUnit}
+              yearRange={yearRange}
+              onYearRangeChange={setYearRange}
             />
           </div>
 
-          {/* Data table — shows only selected segments */}
+          {/* Data table — shows only selected segments within selected year range */}
           <SegmentsTable
-            chartData={chartData}
+            chartData={chartData.slice(yearRange[0], yearRange[1] + 1)}
             segmentKeys={segmentKeys}
             visibleKeys={visibleSegmentKeys}
             activeUnit={activeUnit}
