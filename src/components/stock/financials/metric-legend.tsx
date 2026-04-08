@@ -7,8 +7,19 @@ interface MetricLegendProps {
   metricLabels: Record<string, string>;
   metricData: Record<string, number[]>;
   years: number;
+  activePeriod: 'annual' | 'quarter';
   onChartTypeChange: (key: string, type: 'bar' | 'line') => void;
   onRemove: (key: string) => void;
+}
+
+// Detect the appropriate magnitude label based on the largest value
+function detectMagnitudeLabel(values: number[]): string {
+  const absMax = values.reduce((max, v) => Math.max(max, Math.abs(v)), 0);
+  if (absMax >= 1e12) return 'Trillions';
+  if (absMax >= 1e9) return 'Billions';
+  if (absMax >= 1e6) return 'Millions';
+  if (absMax >= 1e3) return 'Thousands';
+  return '';
 }
 
 export function MetricLegend({
@@ -16,11 +27,14 @@ export function MetricLegend({
   metricLabels,
   metricData,
   years,
+  activePeriod,
   onChartTypeChange,
   onRemove,
 }: MetricLegendProps) {
   const entries = Array.from(selectedMetrics.entries());
   if (entries.length === 0) return null;
+
+  const periodLabel = activePeriod === 'annual' ? 'Annual' : 'Quarterly';
 
   return (
     <div className="space-y-2 pt-3">
@@ -31,26 +45,41 @@ export function MetricLegend({
         const last = values[values.length - 1];
         const totalChange = first != null && last != null ? calculateTotalChange(first, last) : null;
         const cagr = first != null && last != null && years > 0 ? calculateCAGR(first, last, years) : null;
+        const magnitudeLabel = detectMagnitudeLabel(values);
 
         return (
-          <div key={key} className="flex items-center gap-3 text-xs">
+          <div key={key} className="flex items-center gap-2 text-xs flex-wrap">
             {/* Color swatch */}
             <div className="h-3 w-3 rounded-sm shrink-0" style={{ backgroundColor: color }} />
 
-            {/* Metric name */}
-            <span className="text-text-secondary font-medium min-w-0 truncate">
-              {metricLabels[key] || key}
+            {/* Metric name + qualifiers (Fiscal.ai style) */}
+            <span className="text-text-secondary font-medium min-w-0">
+              {metricLabels[key] || key}{' '}
+              <span className="text-text-muted font-normal">({periodLabel})</span>
+              {magnitudeLabel && (
+                <span className="text-text-muted font-normal"> ({magnitudeLabel})</span>
+              )}
             </span>
 
-            {/* Stats */}
+            {/* Total Change */}
             {totalChange !== null && (
-              <span className={`font-mono ${totalChange >= 0 ? 'text-positive' : 'text-negative'}`}>
-                {totalChange >= 0 ? '+' : ''}{totalChange.toFixed(1)}%
+              <span className="text-text-muted font-normal">
+                (Total Change:{' '}
+                <span className={`font-mono ${totalChange >= 0 ? 'text-positive' : 'text-negative'}`}>
+                  {totalChange >= 0 ? '+' : ''}{totalChange.toFixed(2)}%
+                </span>
+                )
               </span>
             )}
+
+            {/* CAGR */}
             {cagr !== null && (
-              <span className="text-text-muted font-mono">
-                CAGR: {cagr.toFixed(1)}%
+              <span className="text-text-muted font-normal">
+                (CAGR:{' '}
+                <span className="font-mono text-text-secondary">
+                  {cagr.toFixed(2)}%
+                </span>
+                )
               </span>
             )}
 

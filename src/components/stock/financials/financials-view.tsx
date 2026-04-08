@@ -131,6 +131,7 @@ export function FinancialsView({ ticker, initialData }: FinancialsViewProps) {
         data={currentData}
         selectedMetrics={selectedMetrics}
         metricLabels={metricLabels}
+        activePeriod={activePeriod}
         onChartTypeChange={handleChartTypeChange}
         onRemove={handleRemoveMetric}
       />

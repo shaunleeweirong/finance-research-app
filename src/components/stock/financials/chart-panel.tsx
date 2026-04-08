@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useCallback } from 'react';
+import { useMemo, useRef, useCallback, useState, useEffect } from 'react';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -13,6 +13,7 @@ import {
   LabelList,
 } from 'recharts';
 import { Card } from '@/components/ui/card';
+import { Slider } from '@/components/ui/slider';
 import { CHART_COLORS } from '@/lib/utils/chart-helpers';
 import { formatCompactNumber } from '@/lib/utils/format';
 import { MetricLegend } from './metric-legend';
@@ -23,6 +24,7 @@ interface ChartPanelProps {
   data: FinancialRecord[];
   selectedMetrics: Map<string, { chartType: 'bar' | 'line' }>;
   metricLabels: Record<string, string>;
+  activePeriod: 'annual' | 'quarter';
   onChartTypeChange: (key: string, type: 'bar' | 'line') => void;
   onRemove: (key: string) => void;
 }
@@ -38,14 +40,15 @@ export function ChartPanel({
   data,
   selectedMetrics,
   metricLabels,
+  activePeriod,
   onChartTypeChange,
   onRemove,
 }: ChartPanelProps) {
   const chartRef = useRef<HTMLDivElement>(null);
   const entries = Array.from(selectedMetrics.entries());
 
-  // Transform data for chart (reverse so oldest is first = left side of chart)
-  const chartData = useMemo(() => {
+  // Full chronological data: oldest first, newest last
+  const fullChartData = useMemo(() => {
     return [...data].reverse().map((d) => {
       const point: Record<string, unknown> = { period: getPeriodLabel(d) };
       entries.forEach(([key]) => {
@@ -53,22 +56,38 @@ export function ChartPanel({
       });
       return point;
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, selectedMetrics]);
 
-  // Build metric data arrays for CAGR calculation
+  // Range selection: [startIndex, endIndex] into fullChartData
+  // Defaults to the full range when data or length changes
+  const maxIdx = Math.max(0, fullChartData.length - 1);
+  const [range, setRange] = useState<[number, number]>([0, maxIdx]);
+
+  // Reset range when the data length changes (period or limit toggle)
+  useEffect(() => {
+    setRange([0, maxIdx]);
+  }, [maxIdx]);
+
+  const [startIdx, endIdx] = range;
+  const visibleChartData = useMemo(
+    () => fullChartData.slice(startIdx, endIdx + 1),
+    [fullChartData, startIdx, endIdx],
+  );
+
+  // Build metric data arrays for CAGR calculation (based on visible range)
   const metricData = useMemo(() => {
     const result: Record<string, number[]> = {};
     entries.forEach(([key]) => {
-      result[key] = chartData
+      result[key] = visibleChartData
         .map((d) => d[key] as number)
         .filter((v) => v != null);
     });
     return result;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chartData, selectedMetrics]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleChartData, selectedMetrics]);
 
-  const years = chartData.length > 1 ? chartData.length - 1 : 0;
+  const years = visibleChartData.length > 1 ? visibleChartData.length - 1 : 0;
 
   const handleDownload = useCallback(async () => {
     if (!chartRef.current) return;
@@ -98,10 +117,26 @@ export function ChartPanel({
     );
   }
 
+  const startLabel = fullChartData[startIdx]?.period as string | undefined;
+  const endLabel = fullChartData[endIdx]?.period as string | undefined;
+  const isFullRange = startIdx === 0 && endIdx === maxIdx;
+
   return (
     <Card className="bg-surface border-border p-4">
-      {/* Download button */}
-      <div className="flex justify-end mb-2">
+      {/* Header: range info + download */}
+      <div className="flex items-center justify-between mb-2 text-xs">
+        <div className="text-text-muted">
+          {startLabel && endLabel && (
+            <>
+              Showing <span className="text-text-secondary">{startLabel} – {endLabel}</span>
+              {!isFullRange && (
+                <span className="text-text-muted ml-2">
+                  ({visibleChartData.length} of {fullChartData.length} periods)
+                </span>
+              )}
+            </>
+          )}
+        </div>
         <button
           onClick={handleDownload}
           className="rounded-md bg-positive/10 text-positive px-3 py-1.5 text-xs font-medium hover:bg-positive/20 transition-colors flex items-center gap-1.5"
@@ -116,7 +151,7 @@ export function ChartPanel({
       {/* Chart */}
       <div ref={chartRef} className="h-72">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData} margin={{ top: 20, right: 10, bottom: 5, left: 10 }}>
+          <ComposedChart data={visibleChartData} margin={{ top: 20, right: 10, bottom: 5, left: 10 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
             <XAxis
               dataKey="period"
@@ -174,12 +209,47 @@ export function ChartPanel({
         </ResponsiveContainer>
       </div>
 
+      {/* Range slider */}
+      {fullChartData.length > 2 && (
+        <div className="mt-4 pt-3 border-t border-border">
+          <div className="flex items-center justify-between mb-2 text-[11px] text-text-muted">
+            <span>{fullChartData[0]?.period as string}</span>
+            <span className="text-text-secondary">Drag handles to focus on a date range</span>
+            <span>{fullChartData[maxIdx]?.period as string}</span>
+          </div>
+          <Slider
+            min={0}
+            max={maxIdx}
+            step={1}
+            value={range}
+            onValueChange={(v) => {
+              const arr = Array.isArray(v) ? v : [v];
+              if (arr.length >= 2) {
+                setRange([arr[0], arr[1]]);
+              }
+            }}
+            className="w-full"
+          />
+          {!isFullRange && (
+            <div className="mt-2 flex justify-center">
+              <button
+                onClick={() => setRange([0, maxIdx])}
+                className="text-[11px] text-text-muted hover:text-foreground transition-colors"
+              >
+                Reset range
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Legend */}
       <MetricLegend
         selectedMetrics={selectedMetrics}
         metricLabels={metricLabels}
         metricData={metricData}
         years={years}
+        activePeriod={activePeriod}
         onChartTypeChange={onChartTypeChange}
         onRemove={onRemove}
       />
