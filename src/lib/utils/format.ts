@@ -48,3 +48,33 @@ export function formatParenthetical(value: number | null): string {
   if (value < 0) return `(${formatNumber(Math.abs(value))})`;
   return formatNumber(value);
 }
+
+export type DataUnit = 'K' | 'M' | 'B';
+
+// Format a value in a specific unit (forced, no auto-scaling).
+// Used when the user wants all column values in the same unit for visual consistency.
+export function formatInUnit(value: number | null, unit: DataUnit, withCurrency: boolean = true): string {
+  if (value === null || value === undefined || isNaN(value)) return 'N/A';
+  const divisor = unit === 'B' ? 1e9 : unit === 'M' ? 1e6 : 1e3;
+  const divided = value / divisor;
+  const sign = divided < 0 ? '-' : '';
+  const abs = Math.abs(divided);
+  // Use more decimals for smaller displayed numbers
+  const decimals = abs < 10 ? 2 : abs < 100 ? 2 : abs < 1000 ? 2 : 1;
+  const formatted = new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(abs);
+  return `${sign}${withCurrency ? '$' : ''}${formatted}${unit}`;
+}
+
+// Auto-detect the best unit for a given dataset based on the maximum absolute value.
+export function detectBestUnit(values: (number | null | undefined)[]): DataUnit {
+  const absMax = values.reduce<number>((max, v) => {
+    if (v == null || isNaN(v)) return max;
+    return Math.max(max, Math.abs(v));
+  }, 0);
+  if (absMax >= 1e9) return 'B';
+  if (absMax >= 1e6) return 'M';
+  return 'K';
+}
