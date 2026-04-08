@@ -23,6 +23,12 @@ export async function GET(
 
   const statementParam = request.nextUrl.searchParams.get('statement') ?? 'income';
   const period = (request.nextUrl.searchParams.get('period') ?? 'annual') as 'annual' | 'quarter';
+  const limitParam = request.nextUrl.searchParams.get('limit');
+  const parsedLimit = limitParam ? parseInt(limitParam, 10) : NaN;
+  // Clamp limit to reasonable bounds: 1-200. Default 10 if missing or invalid.
+  const limit = Number.isFinite(parsedLimit) && parsedLimit > 0 && parsedLimit <= 200
+    ? parsedLimit
+    : 10;
 
   if (!VALID_STATEMENTS.includes(statementParam as StatementType)) {
     return NextResponse.json(
@@ -37,16 +43,16 @@ export async function GET(
     let result;
     switch (statement) {
       case 'income':
-        result = await getIncomeStatement(ticker, period);
+        result = await getIncomeStatement(ticker, period, limit);
         break;
       case 'balance':
-        result = await getBalanceSheet(ticker, period);
+        result = await getBalanceSheet(ticker, period, limit);
         break;
       case 'cashflow':
-        result = await getCashFlowStatement(ticker, period);
+        result = await getCashFlowStatement(ticker, period, limit);
         break;
       case 'ratios':
-        result = await getRatios(ticker, period);
+        result = await getRatios(ticker, period, limit);
         break;
     }
     return NextResponse.json(result);
