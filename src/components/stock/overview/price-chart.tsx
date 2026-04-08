@@ -113,14 +113,14 @@ export function PriceChart({ ticker, initialData }: PriceChartProps) {
               <XAxis
                 dataKey="date"
                 tickFormatter={formatXLabel}
-                tick={{ fill: '#64748b', fontSize: 11 }}
+                tick={{ fill: '#cbd5e1', fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
                 minTickGap={50}
               />
               <YAxis
                 domain={['auto', 'auto']}
-                tick={{ fill: '#64748b', fontSize: 11 }}
+                tick={{ fill: '#cbd5e1', fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(v: number) => `$${v.toFixed(0)}`}
@@ -131,7 +131,7 @@ export function PriceChart({ ticker, initialData }: PriceChartProps) {
                   backgroundColor: '#111827',
                   border: '1px solid #1e293b',
                   borderRadius: '8px',
-                  color: '#f1f5f9',
+                  color: '#f8fafc',
                   fontSize: '13px',
                 }}
                 labelFormatter={(label) =>

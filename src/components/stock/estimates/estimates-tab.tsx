@@ -269,12 +269,12 @@ function FinancialEstimateView({ metric, estimates, actuals, currentYear }: Fina
               <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
               <XAxis
                 dataKey="yearLabel"
-                tick={{ fill: '#64748b', fontSize: 11 }}
+                tick={{ fill: '#cbd5e1', fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
-                tick={{ fill: '#64748b', fontSize: 11 }}
+                tick={{ fill: '#cbd5e1', fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={metric.yAxisFormatter}
@@ -636,7 +636,7 @@ function PriceTargetsView({ consensus, summary, targets, currentPrice }: PriceTa
                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                 <XAxis
                   dataKey="date"
-                  tick={{ fill: '#64748b', fontSize: 11 }}
+                  tick={{ fill: '#cbd5e1', fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(v: string) => {
@@ -646,7 +646,7 @@ function PriceTargetsView({ consensus, summary, targets, currentPrice }: PriceTa
                   minTickGap={40}
                 />
                 <YAxis
-                  tick={{ fill: '#64748b', fontSize: 11 }}
+                  tick={{ fill: '#cbd5e1', fontSize: 11 }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(v: number) => `$${v.toFixed(0)}`}
@@ -692,12 +692,12 @@ function PriceTargetsView({ consensus, summary, targets, currentPrice }: PriceTa
                 {currentPrice != null && (
                   <ReferenceLine
                     y={currentPrice}
-                    stroke="#94a3b8"
+                    stroke="#e2e8f0"
                     strokeDasharray="4 4"
                     strokeWidth={1}
                     label={{
                       value: `Current $${currentPrice.toFixed(2)}`,
-                      fill: '#94a3b8',
+                      fill: '#e2e8f0',
                       fontSize: 10,
                       position: 'insideTopRight',
                     }}

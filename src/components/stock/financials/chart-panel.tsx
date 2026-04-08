@@ -157,12 +157,12 @@ export function ChartPanel({
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
             <XAxis
               dataKey="period"
-              tick={{ fill: '#64748b', fontSize: 11 }}
+              tick={{ fill: '#cbd5e1', fontSize: 11 }}
               tickLine={false}
               axisLine={false}
             />
             <YAxis
-              tick={{ fill: '#64748b', fontSize: 11 }}
+              tick={{ fill: '#cbd5e1', fontSize: 11 }}
               tickLine={false}
               axisLine={false}
               tickFormatter={(v: number) => formatInUnit(v, activeUnit, false, false)}
@@ -173,7 +173,7 @@ export function ChartPanel({
                 backgroundColor: '#111827',
                 border: '1px solid #1e293b',
                 borderRadius: '8px',
-                color: '#f1f5f9',
+                color: '#f8fafc',
                 fontSize: '12px',
               }}
               formatter={(value: unknown, name: unknown) => [
@@ -202,7 +202,7 @@ export function ChartPanel({
                     dataKey={key}
                     position="top"
                     formatter={(v: unknown) => formatInUnit(typeof v === 'number' ? v : null, activeUnit, false, false)}
-                    style={{ fill: '#94a3b8', fontSize: 10 }}
+                    style={{ fill: '#e2e8f0', fontSize: 10 }}
                   />
                 </Bar>
               );
