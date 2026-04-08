@@ -15,7 +15,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { CHART_COLORS } from '@/lib/utils/chart-helpers';
-import { formatCompactNumber } from '@/lib/utils/format';
+import { formatInUnit, type DataUnit } from '@/lib/utils/format';
 import { MetricLegend } from './metric-legend';
 import { toPng } from 'html-to-image';
 import type { FinancialRecord } from '@/lib/fmp/types';
@@ -25,6 +25,7 @@ interface ChartPanelProps {
   selectedMetrics: Map<string, { chartType: 'bar' | 'line' }>;
   metricLabels: Record<string, string>;
   activePeriod: 'annual' | 'quarter';
+  activeUnit: DataUnit;
   onChartTypeChange: (key: string, type: 'bar' | 'line') => void;
   onRemove: (key: string) => void;
 }
@@ -41,6 +42,7 @@ export function ChartPanel({
   selectedMetrics,
   metricLabels,
   activePeriod,
+  activeUnit,
   onChartTypeChange,
   onRemove,
 }: ChartPanelProps) {
@@ -163,7 +165,7 @@ export function ChartPanel({
               tick={{ fill: '#64748b', fontSize: 11 }}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(v: number) => formatCompactNumber(v)}
+              tickFormatter={(v: number) => formatInUnit(v, activeUnit, false, false)}
               width={70}
             />
             <Tooltip
@@ -175,7 +177,7 @@ export function ChartPanel({
                 fontSize: '12px',
               }}
               formatter={(value: unknown, name: unknown) => [
-                formatCompactNumber(typeof value === 'number' ? value : null),
+                formatInUnit(typeof value === 'number' ? value : null, activeUnit, true, false),
                 typeof name === 'string' ? (metricLabels[name] || name) : String(name),
               ]}
             />
@@ -199,7 +201,7 @@ export function ChartPanel({
                   <LabelList
                     dataKey={key}
                     position="top"
-                    formatter={(v: unknown) => formatCompactNumber(typeof v === 'number' ? v : null)}
+                    formatter={(v: unknown) => formatInUnit(typeof v === 'number' ? v : null, activeUnit, false, false)}
                     style={{ fill: '#94a3b8', fontSize: 10 }}
                   />
                 </Bar>
@@ -250,6 +252,7 @@ export function ChartPanel({
         metricData={metricData}
         years={years}
         activePeriod={activePeriod}
+        activeUnit={activeUnit}
         onChartTypeChange={onChartTypeChange}
         onRemove={onRemove}
       />

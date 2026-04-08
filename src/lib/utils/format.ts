@@ -51,9 +51,29 @@ export function formatParenthetical(value: number | null): string {
 
 export type DataUnit = 'K' | 'M' | 'B';
 
+// Human-readable labels for UI (buttons use singular, legend uses plural)
+export const UNIT_LABEL_SINGULAR: Record<DataUnit, string> = {
+  K: 'Thousand',
+  M: 'Million',
+  B: 'Billion',
+};
+
+export const UNIT_LABEL_PLURAL: Record<DataUnit, string> = {
+  K: 'Thousands',
+  M: 'Millions',
+  B: 'Billions',
+};
+
 // Format a value in a specific unit (forced, no auto-scaling).
 // Used when the user wants all column values in the same unit for visual consistency.
-export function formatInUnit(value: number | null, unit: DataUnit, withCurrency: boolean = true): string {
+// When `withCurrency` is true, prepends $. When `withSuffix` is true, appends K/M/B letter.
+// Fiscal.ai-style display uses withCurrency=true, withSuffix=false.
+export function formatInUnit(
+  value: number | null,
+  unit: DataUnit,
+  withCurrency: boolean = true,
+  withSuffix: boolean = false,
+): string {
   if (value === null || value === undefined || isNaN(value)) return 'N/A';
   const divisor = unit === 'B' ? 1e9 : unit === 'M' ? 1e6 : 1e3;
   const divided = value / divisor;
@@ -65,7 +85,7 @@ export function formatInUnit(value: number | null, unit: DataUnit, withCurrency:
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(abs);
-  return `${sign}${withCurrency ? '$' : ''}${formatted}${unit}`;
+  return `${sign}${withCurrency ? '$' : ''}${formatted}${withSuffix ? unit : ''}`;
 }
 
 // Auto-detect the best unit for a given dataset based on the maximum absolute value.

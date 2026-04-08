@@ -2,27 +2,29 @@
 
 import { Checkbox } from '@/components/ui/checkbox';
 import type { LineItemConfig } from '@/config/financial-line-items';
-import { formatLargeNumber, formatPercent, formatNumber } from '@/lib/utils/format';
+import { formatInUnit, formatPercent, formatNumber, type DataUnit } from '@/lib/utils/format';
 import type { FinancialRecord } from '@/lib/fmp/types';
 
 interface DataTableProps {
   data: FinancialRecord[];
   lineItems: LineItemConfig[];
   selectedMetrics: Set<string>;
+  activeUnit: DataUnit;
   onMetricToggle: (key: string) => void;
 }
 
-function formatValue(value: unknown, format: LineItemConfig['format']): string {
+function formatValue(value: unknown, format: LineItemConfig['format'], unit: DataUnit): string {
   const num = typeof value === 'number' ? value : null;
   switch (format) {
     case 'currency':
-      return formatLargeNumber(num);
+      // Force the selected unit so all currency values in the table share one scale
+      return formatInUnit(num, unit, true, false);
     case 'percent':
       return formatPercent(num !== null ? num * 100 : null);
     case 'ratio':
       return formatNumber(num, 2);
     case 'number':
-      return formatLargeNumber(num);
+      return formatInUnit(num, unit, false, false);
     default:
       return num !== null ? String(num) : 'N/A';
   }
@@ -41,7 +43,7 @@ function isNegative(value: unknown): boolean {
   return typeof value === 'number' && value < 0;
 }
 
-export function DataTable({ data, lineItems, selectedMetrics, onMetricToggle }: DataTableProps) {
+export function DataTable({ data, lineItems, selectedMetrics, activeUnit, onMetricToggle }: DataTableProps) {
   if (data.length === 0) {
     return (
       <div className="flex h-40 items-center justify-center text-text-muted">
@@ -104,7 +106,7 @@ export function DataTable({ data, lineItems, selectedMetrics, onMetricToggle }: 
                         isNegative(val) ? 'text-negative' : 'text-foreground'
                       }`}
                     >
-                      {formatValue(val, item.format)}
+                      {formatValue(val, item.format, activeUnit)}
                     </td>
                   );
                 })}

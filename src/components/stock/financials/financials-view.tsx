@@ -6,6 +6,7 @@ import { ControlsBar, type DepthLimit } from './controls-bar';
 import { DataTable } from './data-table';
 import { STATEMENT_CONFIGS, type StatementType } from '@/config/financial-line-items';
 import type { FMPIncomeStatement, FMPBalanceSheet, FMPCashFlowStatement, FMPRatios, FinancialRecord } from '@/lib/fmp/types';
+import { detectBestUnit, type DataUnit } from '@/lib/utils/format';
 
 interface FinancialsViewProps {
   ticker: string;
@@ -23,6 +24,11 @@ export function FinancialsView({ ticker, initialData }: FinancialsViewProps) {
   const [activeStatement, setActiveStatement] = useState<StatementType>('income');
   const [activePeriod, setActivePeriod] = useState<'annual' | 'quarter'>('annual');
   const [activeLimit, setActiveLimit] = useState<DepthLimit>(10);
+  // Auto-detect initial unit based on the largest revenue value in income data
+  const [activeUnit, setActiveUnit] = useState<DataUnit>(() => {
+    const revenues = initialData.income.map((r) => r.revenue);
+    return detectBestUnit(revenues);
+  });
   const [selectedMetrics, setSelectedMetrics] = useState<Map<string, { chartType: 'bar' | 'line' }>>(new Map());
   const [isLoading, setIsLoading] = useState(false);
 
@@ -91,6 +97,10 @@ export function FinancialsView({ ticker, initialData }: FinancialsViewProps) {
     void fetchData(activeStatement, activePeriod, limit);
   }
 
+  function handleUnitChange(unit: DataUnit) {
+    setActiveUnit(unit);
+  }
+
   function handleMetricToggle(key: string) {
     setSelectedMetrics((prev) => {
       const next = new Map(prev);
@@ -132,6 +142,7 @@ export function FinancialsView({ ticker, initialData }: FinancialsViewProps) {
         selectedMetrics={selectedMetrics}
         metricLabels={metricLabels}
         activePeriod={activePeriod}
+        activeUnit={activeUnit}
         onChartTypeChange={handleChartTypeChange}
         onRemove={handleRemoveMetric}
       />
@@ -141,9 +152,11 @@ export function FinancialsView({ ticker, initialData }: FinancialsViewProps) {
         activeStatement={activeStatement}
         activePeriod={activePeriod}
         activeLimit={activeLimit}
+        activeUnit={activeUnit}
         onStatementChange={handleStatementChange}
         onPeriodChange={handlePeriodChange}
         onLimitChange={handleLimitChange}
+        onUnitChange={handleUnitChange}
         isLoading={isLoading}
       />
 
@@ -155,6 +168,7 @@ export function FinancialsView({ ticker, initialData }: FinancialsViewProps) {
           data={currentData}
           lineItems={currentConfig.items}
           selectedMetrics={selectedSet}
+          activeUnit={activeUnit}
           onMetricToggle={handleMetricToggle}
         />
       )}

@@ -2,6 +2,8 @@
 
 import type { StatementType } from '@/config/financial-line-items';
 import { STATEMENT_CONFIGS } from '@/config/financial-line-items';
+import type { DataUnit } from '@/lib/utils/format';
+import { UNIT_LABEL_SINGULAR } from '@/lib/utils/format';
 
 export type DepthLimit = 10 | 20 | 40;
 
@@ -9,9 +11,11 @@ interface ControlsBarProps {
   activeStatement: StatementType;
   activePeriod: 'annual' | 'quarter';
   activeLimit: DepthLimit;
+  activeUnit: DataUnit;
   onStatementChange: (statement: StatementType) => void;
   onPeriodChange: (period: 'annual' | 'quarter') => void;
   onLimitChange: (limit: DepthLimit) => void;
+  onUnitChange: (unit: DataUnit) => void;
   isLoading: boolean;
 }
 
@@ -22,13 +26,17 @@ const PERIODS = [
 
 const DEPTH_OPTIONS: DepthLimit[] = [10, 20, 40];
 
+const UNIT_OPTIONS: DataUnit[] = ['K', 'M', 'B'];
+
 export function ControlsBar({
   activeStatement,
   activePeriod,
   activeLimit,
+  activeUnit,
   onStatementChange,
   onPeriodChange,
   onLimitChange,
+  onUnitChange,
   isLoading,
 }: ControlsBarProps) {
   const depthSuffix = activePeriod === 'annual' ? 'Y' : 'Q';
@@ -53,7 +61,25 @@ export function ControlsBar({
         ))}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Unit toggle — Thousand / Million / Billion */}
+        <div className="flex rounded-lg bg-background p-0.5" title="Display values in">
+          {UNIT_OPTIONS.map((unit) => (
+            <button
+              key={unit}
+              onClick={() => onUnitChange(unit)}
+              disabled={isLoading}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                activeUnit === unit
+                  ? 'bg-surface-hover text-foreground'
+                  : 'text-text-secondary hover:text-foreground'
+              } disabled:opacity-50`}
+            >
+              {UNIT_LABEL_SINGULAR[unit]}
+            </button>
+          ))}
+        </div>
+
         {/* Depth toggle */}
         <div className="flex rounded-lg bg-background p-0.5" title="Show more history">
           {DEPTH_OPTIONS.map((depth) => (

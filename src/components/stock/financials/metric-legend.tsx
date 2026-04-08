@@ -1,6 +1,7 @@
 'use client';
 
 import { CHART_COLORS, calculateCAGR, calculateTotalChange } from '@/lib/utils/chart-helpers';
+import { UNIT_LABEL_PLURAL, type DataUnit } from '@/lib/utils/format';
 
 interface MetricLegendProps {
   selectedMetrics: Map<string, { chartType: 'bar' | 'line' }>;
@@ -8,18 +9,9 @@ interface MetricLegendProps {
   metricData: Record<string, number[]>;
   years: number;
   activePeriod: 'annual' | 'quarter';
+  activeUnit: DataUnit;
   onChartTypeChange: (key: string, type: 'bar' | 'line') => void;
   onRemove: (key: string) => void;
-}
-
-// Detect the appropriate magnitude label based on the largest value
-function detectMagnitudeLabel(values: number[]): string {
-  const absMax = values.reduce((max, v) => Math.max(max, Math.abs(v)), 0);
-  if (absMax >= 1e12) return 'Trillions';
-  if (absMax >= 1e9) return 'Billions';
-  if (absMax >= 1e6) return 'Millions';
-  if (absMax >= 1e3) return 'Thousands';
-  return '';
 }
 
 export function MetricLegend({
@@ -28,6 +20,7 @@ export function MetricLegend({
   metricData,
   years,
   activePeriod,
+  activeUnit,
   onChartTypeChange,
   onRemove,
 }: MetricLegendProps) {
@@ -35,6 +28,7 @@ export function MetricLegend({
   if (entries.length === 0) return null;
 
   const periodLabel = activePeriod === 'annual' ? 'Annual' : 'Quarterly';
+  const magnitudeLabel = UNIT_LABEL_PLURAL[activeUnit];
 
   return (
     <div className="space-y-2 pt-3">
@@ -45,7 +39,6 @@ export function MetricLegend({
         const last = values[values.length - 1];
         const totalChange = first != null && last != null ? calculateTotalChange(first, last) : null;
         const cagr = first != null && last != null && years > 0 ? calculateCAGR(first, last, years) : null;
-        const magnitudeLabel = detectMagnitudeLabel(values);
 
         return (
           <div key={key} className="flex items-center gap-2 text-xs flex-wrap">
@@ -56,9 +49,7 @@ export function MetricLegend({
             <span className="text-text-secondary font-medium min-w-0">
               {metricLabels[key] || key}{' '}
               <span className="text-text-muted font-normal">({periodLabel})</span>
-              {magnitudeLabel && (
-                <span className="text-text-muted font-normal"> ({magnitudeLabel})</span>
-              )}
+              <span className="text-text-muted font-normal"> ({magnitudeLabel})</span>
             </span>
 
             {/* Total Change */}
