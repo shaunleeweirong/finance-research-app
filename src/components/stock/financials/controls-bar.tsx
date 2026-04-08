@@ -42,9 +42,9 @@ export function ControlsBar({
   const depthSuffix = activePeriod === 'annual' ? 'Y' : 'Q';
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="flex flex-wrap items-end justify-between gap-4">
       {/* Statement sub-tabs */}
-      <div className="flex gap-1">
+      <div className="flex gap-1 pb-0.5">
         {(Object.keys(STATEMENT_CONFIGS) as StatementType[]).map((key) => (
           <button
             key={key}
@@ -61,59 +61,76 @@ export function ControlsBar({
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        {/* Unit toggle — Thousand / Million / Billion */}
-        <div className="flex rounded-lg bg-background p-0.5" title="Display values in">
-          {UNIT_OPTIONS.map((unit) => (
-            <button
-              key={unit}
-              onClick={() => onUnitChange(unit)}
-              disabled={isLoading}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                activeUnit === unit
-                  ? 'bg-surface-hover text-foreground'
-                  : 'text-text-secondary hover:text-foreground'
-              } disabled:opacity-50`}
-            >
-              {UNIT_LABEL_SINGULAR[unit]}
-            </button>
-          ))}
+      <div className="flex flex-wrap items-end gap-4">
+        {/* Unit toggle — K / M / B */}
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wider text-text-muted font-medium">
+            Units
+          </span>
+          <div className="flex rounded-lg bg-background p-0.5">
+            {UNIT_OPTIONS.map((unit) => (
+              <button
+                key={unit}
+                onClick={() => onUnitChange(unit)}
+                disabled={isLoading}
+                title={UNIT_LABEL_SINGULAR[unit]}
+                className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                  activeUnit === unit
+                    ? 'bg-surface-hover text-foreground'
+                    : 'text-text-secondary hover:text-foreground'
+                } disabled:opacity-50`}
+              >
+                {unit}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Depth toggle */}
-        <div className="flex rounded-lg bg-background p-0.5" title="Show more history">
-          {DEPTH_OPTIONS.map((depth) => (
-            <button
-              key={depth}
-              onClick={() => onLimitChange(depth)}
-              disabled={isLoading}
-              className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                activeLimit === depth
-                  ? 'bg-surface-hover text-foreground'
-                  : 'text-text-secondary hover:text-foreground'
-              } disabled:opacity-50`}
-            >
-              {depth}{depthSuffix}
-            </button>
-          ))}
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wider text-text-muted font-medium">
+            History
+          </span>
+          <div className="flex rounded-lg bg-background p-0.5">
+            {DEPTH_OPTIONS.map((depth) => (
+              <button
+                key={depth}
+                onClick={() => onLimitChange(depth)}
+                disabled={isLoading}
+                title={`Show ${depth} ${activePeriod === 'annual' ? 'years' : 'quarters'} of history`}
+                className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                  activeLimit === depth
+                    ? 'bg-surface-hover text-foreground'
+                    : 'text-text-secondary hover:text-foreground'
+                } disabled:opacity-50`}
+              >
+                {depth}{depthSuffix}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Period toggle */}
-        <div className="flex rounded-lg bg-background p-0.5">
-          {PERIODS.map((period) => (
-            <button
-              key={period.value}
-              onClick={() => onPeriodChange(period.value)}
-              disabled={isLoading}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                activePeriod === period.value
-                  ? 'bg-surface-hover text-foreground'
-                  : 'text-text-secondary hover:text-foreground'
-              } disabled:opacity-50`}
-            >
-              {period.label}
-            </button>
-          ))}
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wider text-text-muted font-medium">
+            Period
+          </span>
+          <div className="flex rounded-lg bg-background p-0.5">
+            {PERIODS.map((period) => (
+              <button
+                key={period.value}
+                onClick={() => onPeriodChange(period.value)}
+                disabled={isLoading}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  activePeriod === period.value
+                    ? 'bg-surface-hover text-foreground'
+                    : 'text-text-secondary hover:text-foreground'
+                } disabled:opacity-50`}
+              >
+                {period.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
