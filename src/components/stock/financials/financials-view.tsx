@@ -4,8 +4,16 @@ import { useState, useMemo, useCallback, useRef } from 'react';
 import { ChartPanel } from './chart-panel';
 import { ControlsBar, type DepthLimit } from './controls-bar';
 import { DataTable } from './data-table';
+import { SegmentsView } from './segments-view';
 import { STATEMENT_CONFIGS, type StatementType } from '@/config/financial-line-items';
-import type { FMPIncomeStatement, FMPBalanceSheet, FMPCashFlowStatement, FMPRatios, FinancialRecord } from '@/lib/fmp/types';
+import type {
+  FMPIncomeStatement,
+  FMPBalanceSheet,
+  FMPCashFlowStatement,
+  FMPRatios,
+  FinancialRecord,
+  SegmentPeriod,
+} from '@/lib/fmp/types';
 import { detectBestUnit, type DataUnit } from '@/lib/utils/format';
 
 interface FinancialsViewProps {
@@ -15,6 +23,8 @@ interface FinancialsViewProps {
     balance: FMPBalanceSheet[];
     cashflow: FMPCashFlowStatement[];
     ratios: FMPRatios[];
+    productSegments: SegmentPeriod[];
+    geographicSegments: SegmentPeriod[];
   };
 }
 
@@ -60,6 +70,9 @@ export function FinancialsView({ ticker, initialData }: FinancialsViewProps) {
 
   const fetchData = useCallback(
     async (statement: StatementType, period: 'annual' | 'quarter', limit: DepthLimit) => {
+      // Segments tab uses its own data (server-fetched), not the financials API
+      if (statement === 'segments') return;
+
       const key = `${statement}-${period}-${limit}`;
       if (dataCacheRef.current[key]) return; // Check via ref to avoid stale closure
 
@@ -84,7 +97,10 @@ export function FinancialsView({ ticker, initialData }: FinancialsViewProps) {
   function handleStatementChange(statement: StatementType) {
     setActiveStatement(statement);
     setSelectedMetrics(new Map()); // Clear selections when switching statements
-    void fetchData(statement, activePeriod, activeLimit);
+    // Segments tab doesn't use the financials fetch endpoint
+    if (statement !== 'segments') {
+      void fetchData(statement, activePeriod, activeLimit);
+    }
   }
 
   function handlePeriodChange(period: 'annual' | 'quarter') {
@@ -133,19 +149,22 @@ export function FinancialsView({ ticker, initialData }: FinancialsViewProps) {
   }
 
   const selectedSet = useMemo(() => new Set(selectedMetrics.keys()), [selectedMetrics]);
+  const isSegmentsTab = activeStatement === 'segments';
 
   return (
     <div className="space-y-4">
-      {/* Chart panel */}
-      <ChartPanel
-        data={currentData}
-        selectedMetrics={selectedMetrics}
-        metricLabels={metricLabels}
-        activePeriod={activePeriod}
-        activeUnit={activeUnit}
-        onChartTypeChange={handleChartTypeChange}
-        onRemove={handleRemoveMetric}
-      />
+      {/* Chart panel — only for statement tabs, not segments */}
+      {!isSegmentsTab && (
+        <ChartPanel
+          data={currentData}
+          selectedMetrics={selectedMetrics}
+          metricLabels={metricLabels}
+          activePeriod={activePeriod}
+          activeUnit={activeUnit}
+          onChartTypeChange={handleChartTypeChange}
+          onRemove={handleRemoveMetric}
+        />
+      )}
 
       {/* Controls */}
       <ControlsBar
@@ -160,8 +179,14 @@ export function FinancialsView({ ticker, initialData }: FinancialsViewProps) {
         isLoading={isLoading}
       />
 
-      {/* Data table */}
-      {isLoading ? (
+      {/* Content: segments view OR data table */}
+      {isSegmentsTab ? (
+        <SegmentsView
+          productData={initialData.productSegments}
+          geographicData={initialData.geographicSegments}
+          activeUnit={activeUnit}
+        />
+      ) : isLoading ? (
         <div className="h-96 animate-pulse rounded-lg bg-surface" />
       ) : (
         <DataTable

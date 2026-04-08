@@ -16,6 +16,8 @@ import {
   getPriceTargetConsensus,
   getPriceTargetSummary,
   getPriceTargets,
+  getRevenueProductSegmentation,
+  getRevenueGeographicSegmentation,
   getInstitutionalHolders,
   getInsiderTrading,
 } from '@/lib/fmp';
@@ -55,6 +57,7 @@ export default async function StockPage({
   const [
     profile, quote, historicalData, keyMetricsData,
     incomeData, balanceData, cashflowData, ratiosData,
+    productSegments, geographicSegments,
     newsData, filingsData, estimatesData,
     priceTargetConsensus, priceTargetSummary, priceTargets,
     holdersData, insiderData,
@@ -67,6 +70,9 @@ export default async function StockPage({
     getBalanceSheet(upperTicker, 'annual', 10),
     getCashFlowStatement(upperTicker, 'annual', 10),
     getRatios(upperTicker, 'annual', 10),
+    // Segments — only fetch when Financials tab is active
+    tab === 'financials' ? getRevenueProductSegmentation(upperTicker) : Promise.resolve([]),
+    tab === 'financials' ? getRevenueGeographicSegmentation(upperTicker) : Promise.resolve([]),
     // Tab-specific data — only fetch when needed
     tab === 'news' ? getStockNews(upperTicker, 20) : Promise.resolve([]),
     tab === 'filings' ? getSecFilings(upperTicker, undefined, 40) : Promise.resolve([]),
@@ -135,6 +141,8 @@ export default async function StockPage({
               balance: balanceData ?? [],
               cashflow: cashflowData ?? [],
               ratios: ratiosData ?? [],
+              productSegments: productSegments ?? [],
+              geographicSegments: geographicSegments ?? [],
             }}
           />
         );

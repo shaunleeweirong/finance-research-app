@@ -410,6 +410,16 @@ export interface FMPAnalystEstimate {
   numberAnalystsEstimatedEps: number | null;
 }
 
+// Raw FMP shape: [{ "2025-09-27": { Mac: 33708000000, iPhone: ... } }, ...]
+export type FMPRevenueSegmentationRaw = Array<Record<string, Record<string, number>>>;
+
+// Normalized shape for our components
+export interface SegmentPeriod {
+  date: string;
+  year: string;
+  segments: Record<string, number>;
+}
+
 export interface FMPPriceTargetConsensus {
   symbol: string;
   targetHigh: number | null;

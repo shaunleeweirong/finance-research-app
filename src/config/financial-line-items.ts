@@ -70,11 +70,17 @@ export const RATIO_ITEMS: LineItemConfig[] = [
   { key: 'enterpriseValueMultiple', label: 'EV/EBITDA', format: 'ratio' },
 ];
 
-export const STATEMENT_CONFIGS = {
+interface StatementConfig {
+  label: string;
+  items: LineItemConfig[];
+}
+
+export const STATEMENT_CONFIGS: Record<string, StatementConfig> = {
   income: { label: 'Income Statement', items: INCOME_STATEMENT_ITEMS },
   balance: { label: 'Balance Sheet', items: BALANCE_SHEET_ITEMS },
   cashflow: { label: 'Cash Flow Statement', items: CASH_FLOW_ITEMS },
   ratios: { label: 'Ratios', items: RATIO_ITEMS },
-} as const;
+  segments: { label: 'Segments', items: [] },
+};
 
-export type StatementType = keyof typeof STATEMENT_CONFIGS;
+export type StatementType = 'income' | 'balance' | 'cashflow' | 'ratios' | 'segments';
