@@ -15,6 +15,8 @@ import type {
   SegmentPeriod,
 } from '@/lib/fmp/types';
 import { detectBestUnit, type DataUnit } from '@/lib/utils/format';
+import type { Plan } from '@/lib/auth/plans';
+import { canAccess, FREE_MAX_CHART_METRICS } from '@/lib/auth/plans';
 
 interface FinancialsViewProps {
   ticker: string;
@@ -26,11 +28,12 @@ interface FinancialsViewProps {
     productSegments: SegmentPeriod[];
     geographicSegments: SegmentPeriod[];
   };
+  plan?: Plan;
 }
 
 type StatementData = Record<string, FinancialRecord[]>;
 
-export function FinancialsView({ ticker, initialData }: FinancialsViewProps) {
+export function FinancialsView({ ticker, initialData, plan = 'free' }: FinancialsViewProps) {
   const [activeStatement, setActiveStatement] = useState<StatementType>('income');
   const [activePeriod, setActivePeriod] = useState<'annual' | 'quarter'>('annual');
   const [activeLimit, setActiveLimit] = useState<DepthLimit>(10);
@@ -41,6 +44,8 @@ export function FinancialsView({ ticker, initialData }: FinancialsViewProps) {
   });
   const [selectedMetrics, setSelectedMetrics] = useState<Map<string, { chartType: 'bar' | 'line' }>>(new Map());
   const [isLoading, setIsLoading] = useState(false);
+
+  const unlimitedMetrics = canAccess(plan, 'financials:unlimited-metrics');
 
   // Cache fetched data to avoid re-fetching. Key format: `{statement}-{period}-{limit}`
   // Initial server-side data is always annual 10-year
@@ -123,6 +128,10 @@ export function FinancialsView({ ticker, initialData }: FinancialsViewProps) {
       if (next.has(key)) {
         next.delete(key);
       } else {
+        // Enforce metric limit for free users
+        if (!unlimitedMetrics && next.size >= FREE_MAX_CHART_METRICS) {
+          return prev;
+        }
         next.set(key, { chartType: 'bar' });
       }
       return next;
@@ -153,6 +162,14 @@ export function FinancialsView({ ticker, initialData }: FinancialsViewProps) {
 
   return (
     <div className="space-y-4">
+      {/* Metric limit notice for free users */}
+      {!unlimitedMetrics && !isSegmentsTab && selectedMetrics.size >= FREE_MAX_CHART_METRICS && (
+        <p className="text-xs text-text-muted text-center">
+          Free plan: max {FREE_MAX_CHART_METRICS} chart metrics.{' '}
+          <a href="/pricing" className="text-blue-500 hover:underline">Upgrade for unlimited</a>
+        </p>
+      )}
+
       {/* Chart panel — only for statement tabs, not segments */}
       {!isSegmentsTab && (
         <ChartPanel
@@ -177,6 +194,7 @@ export function FinancialsView({ ticker, initialData }: FinancialsViewProps) {
         onLimitChange={handleLimitChange}
         onUnitChange={handleUnitChange}
         isLoading={isLoading}
+        plan={plan}
       />
 
       {/* Content: segments view OR data table */}

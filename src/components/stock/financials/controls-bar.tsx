@@ -1,9 +1,12 @@
 'use client';
 
+import { Lock } from 'lucide-react';
 import type { StatementType } from '@/config/financial-line-items';
 import { STATEMENT_CONFIGS } from '@/config/financial-line-items';
 import type { DataUnit } from '@/lib/utils/format';
 import { UNIT_LABEL_SINGULAR } from '@/lib/utils/format';
+import type { Plan } from '@/lib/auth/plans';
+import { canAccess } from '@/lib/auth/plans';
 
 export type DepthLimit = 10 | 20 | 40;
 
@@ -17,6 +20,7 @@ interface ControlsBarProps {
   onLimitChange: (limit: DepthLimit) => void;
   onUnitChange: (unit: DataUnit) => void;
   isLoading: boolean;
+  plan?: Plan;
 }
 
 const PERIODS = [
@@ -38,14 +42,21 @@ export function ControlsBar({
   onLimitChange,
   onUnitChange,
   isLoading,
+  plan = 'free',
 }: ControlsBarProps) {
   const depthSuffix = activePeriod === 'annual' ? 'Y' : 'Q';
+
+  // Filter statement tabs — hide segments for free users
+  const visibleStatements = (Object.keys(STATEMENT_CONFIGS) as StatementType[]).filter((key) => {
+    if (key === 'segments') return canAccess(plan, 'financials:segments');
+    return true;
+  });
 
   return (
     <div className="flex flex-wrap items-end justify-between gap-4">
       {/* Statement sub-tabs */}
       <div className="flex gap-1 pb-0.5">
-        {(Object.keys(STATEMENT_CONFIGS) as StatementType[]).map((key) => (
+        {visibleStatements.map((key) => (
           <button
             key={key}
             onClick={() => onStatementChange(key)}
@@ -92,21 +103,34 @@ export function ControlsBar({
             History
           </span>
           <div className="flex rounded-lg bg-background p-0.5">
-            {DEPTH_OPTIONS.map((depth) => (
-              <button
-                key={depth}
-                onClick={() => onLimitChange(depth)}
-                disabled={isLoading}
-                title={`Show ${depth} ${activePeriod === 'annual' ? 'years' : 'quarters'} of history`}
-                className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                  activeLimit === depth
-                    ? 'bg-surface-hover text-foreground'
-                    : 'text-text-secondary hover:text-foreground'
-                } disabled:opacity-50`}
-              >
-                {depth}{depthSuffix}
-              </button>
-            ))}
+            {DEPTH_OPTIONS.map((depth) => {
+              const depthFeature = depth > 10 ? `financials:depth-${depth}` : null;
+              const locked = depthFeature ? !canAccess(plan, depthFeature) : false;
+              return (
+                <button
+                  key={depth}
+                  onClick={() => !locked && onLimitChange(depth)}
+                  disabled={isLoading || locked}
+                  title={
+                    locked
+                      ? `Pro feature — ${depth} ${activePeriod === 'annual' ? 'years' : 'quarters'} of history`
+                      : `Show ${depth} ${activePeriod === 'annual' ? 'years' : 'quarters'} of history`
+                  }
+                  className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                    activeLimit === depth
+                      ? 'bg-surface-hover text-foreground'
+                      : locked
+                        ? 'text-text-muted opacity-50 cursor-not-allowed'
+                        : 'text-text-secondary hover:text-foreground'
+                  } disabled:opacity-50`}
+                >
+                  <span className="flex items-center gap-1">
+                    {depth}{depthSuffix}
+                    {locked && <Lock className="h-2.5 w-2.5" />}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 

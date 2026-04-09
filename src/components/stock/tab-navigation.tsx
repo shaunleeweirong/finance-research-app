@@ -1,7 +1,10 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Lock } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { Plan } from '@/lib/auth/plans';
+import { canAccess } from '@/lib/auth/plans';
 
 const TABS = [
   { value: 'overview', label: 'Overview' },
@@ -12,12 +15,23 @@ const TABS = [
   { value: 'filings', label: 'Filings' },
 ] as const;
 
-export function TabNavigation({ children, ticker }: { children: React.ReactNode; ticker: string }) {
+export function TabNavigation({
+  children,
+  ticker,
+  plan = 'free',
+}: {
+  children: React.ReactNode;
+  ticker: string;
+  plan?: Plan;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const activeTab = searchParams.get('tab') || 'overview';
 
   function handleTabChange(value: string) {
+    // Prevent switching to locked tabs
+    if (!canAccess(plan, `tab:${value}`)) return;
+
     const params = new URLSearchParams(searchParams.toString());
     if (value === 'overview') {
       params.delete('tab');
@@ -34,15 +48,24 @@ export function TabNavigation({ children, ticker }: { children: React.ReactNode;
         variant="line"
         className="w-full justify-start bg-surface border-b border-border rounded-none h-auto p-0 gap-0"
       >
-        {TABS.map((tab) => (
-          <TabsTrigger
-            key={tab.value}
-            value={tab.value}
-            className="rounded-none border-b-2 border-transparent data-active:border-primary data-active:bg-transparent data-active:text-foreground text-text-secondary px-4 py-3 text-sm font-medium"
-          >
-            {tab.label}
-          </TabsTrigger>
-        ))}
+        {TABS.map((tab) => {
+          const locked = !canAccess(plan, `tab:${tab.value}`);
+          return (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              disabled={locked}
+              className={`rounded-none border-b-2 border-transparent data-active:border-primary data-active:bg-transparent data-active:text-foreground text-text-secondary px-4 py-3 text-sm font-medium ${
+                locked ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              <span className="flex items-center gap-1.5">
+                {tab.label}
+                {locked && <Lock className="h-3 w-3" />}
+              </span>
+            </TabsTrigger>
+          );
+        })}
       </TabsList>
       <div className="mt-6">{children}</div>
     </Tabs>

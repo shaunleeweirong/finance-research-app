@@ -1,5 +1,7 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { UserMenu } from '@/components/auth/user-menu';
 import { isValidTicker } from '@/lib/utils/validation';
 import {
   getCompanyProfile,
@@ -31,9 +33,11 @@ import { NewsTab } from '@/components/stock/news/news-tab';
 import { FilingsTab } from '@/components/stock/filings/filings-tab';
 import { EstimatesTab } from '@/components/stock/estimates/estimates-tab';
 import { OwnershipTab } from '@/components/stock/ownership/ownership-tab';
+import { UpgradePrompt } from '@/components/paywall/upgrade-prompt';
 import { SearchBar } from '@/components/search/search-bar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getDateRangeForPeriod } from '@/lib/utils/chart-helpers';
+import { canAccess, type Plan } from '@/lib/auth/plans';
 import type { FMPQuote } from '@/lib/fmp/types';
 
 export default async function StockPage({
@@ -50,6 +54,17 @@ export default async function StockPage({
   if (!isValidTicker(upperTicker)) {
     notFound();
   }
+
+  // Get user plan from Clerk metadata
+  const { userId } = await auth();
+  let userPlan: Plan = 'free';
+  if (userId) {
+    const user = await currentUser();
+    userPlan = (user?.publicMetadata?.plan as Plan) || 'free';
+  }
+
+  // If user tries to access a gated tab via URL, fall back to overview
+  const activeTab = canAccess(userPlan, `tab:${tab}`) ? tab : 'overview';
 
   // Fetch all data in parallel
   const { from, to } = getDateRangeForPeriod('1Y');
@@ -70,18 +85,34 @@ export default async function StockPage({
     getBalanceSheet(upperTicker, 'annual', 10),
     getCashFlowStatement(upperTicker, 'annual', 10),
     getRatios(upperTicker, 'annual', 10),
-    // Segments — only fetch when Financials tab is active
-    tab === 'financials' ? getRevenueProductSegmentation(upperTicker) : Promise.resolve([]),
-    tab === 'financials' ? getRevenueGeographicSegmentation(upperTicker) : Promise.resolve([]),
-    // Tab-specific data — only fetch when needed
-    tab === 'news' ? getStockNews(upperTicker, 20) : Promise.resolve([]),
-    tab === 'filings' ? getSecFilings(upperTicker, undefined, 40) : Promise.resolve([]),
-    tab === 'estimates' ? getAnalystEstimates(upperTicker) : Promise.resolve([]),
-    tab === 'estimates' ? getPriceTargetConsensus(upperTicker) : Promise.resolve(null),
-    tab === 'estimates' ? getPriceTargetSummary(upperTicker) : Promise.resolve(null),
-    tab === 'estimates' ? getPriceTargets(upperTicker) : Promise.resolve([]),
-    tab === 'ownership' ? getInstitutionalHolders(upperTicker) : Promise.resolve([]),
-    tab === 'ownership' ? getInsiderTrading(upperTicker, 20) : Promise.resolve([]),
+    // Segments — only fetch when Financials tab is active and user has access
+    activeTab === 'financials' && canAccess(userPlan, 'financials:segments')
+      ? getRevenueProductSegmentation(upperTicker)
+      : Promise.resolve([]),
+    activeTab === 'financials' && canAccess(userPlan, 'financials:segments')
+      ? getRevenueGeographicSegmentation(upperTicker)
+      : Promise.resolve([]),
+    // Tab-specific data — only fetch when needed and user has access
+    activeTab === 'news' ? getStockNews(upperTicker, 20) : Promise.resolve([]),
+    activeTab === 'filings' ? getSecFilings(upperTicker, undefined, 40) : Promise.resolve([]),
+    activeTab === 'estimates' && canAccess(userPlan, 'tab:estimates')
+      ? getAnalystEstimates(upperTicker)
+      : Promise.resolve([]),
+    activeTab === 'estimates' && canAccess(userPlan, 'tab:estimates')
+      ? getPriceTargetConsensus(upperTicker)
+      : Promise.resolve(null),
+    activeTab === 'estimates' && canAccess(userPlan, 'tab:estimates')
+      ? getPriceTargetSummary(upperTicker)
+      : Promise.resolve(null),
+    activeTab === 'estimates' && canAccess(userPlan, 'tab:estimates')
+      ? getPriceTargets(upperTicker)
+      : Promise.resolve([]),
+    activeTab === 'ownership' && canAccess(userPlan, 'tab:ownership')
+      ? getInstitutionalHolders(upperTicker)
+      : Promise.resolve([]),
+    activeTab === 'ownership' && canAccess(userPlan, 'tab:ownership')
+      ? getInsiderTrading(upperTicker, 20)
+      : Promise.resolve([]),
   ]);
 
   // If no profile found, show 404
@@ -120,8 +151,6 @@ export default async function StockPage({
     timestamp: null,
   };
 
-  const activeTab = tab;
-
   function renderTabContent() {
     switch (activeTab) {
       case 'overview':
@@ -144,11 +173,15 @@ export default async function StockPage({
               productSegments: productSegments ?? [],
               geographicSegments: geographicSegments ?? [],
             }}
+            plan={userPlan}
           />
         );
       case 'news':
         return <NewsTab news={newsData} />;
       case 'estimates':
+        if (!canAccess(userPlan, 'tab:estimates')) {
+          return <UpgradePrompt feature="tab:estimates" title="Analyst Estimates" description="Access analyst consensus estimates, EPS forecasts, revenue projections, and price targets with a Pro plan." />;
+        }
         return (
           <EstimatesTab
             estimates={estimatesData}
@@ -160,6 +193,9 @@ export default async function StockPage({
           />
         );
       case 'ownership':
+        if (!canAccess(userPlan, 'tab:ownership')) {
+          return <UpgradePrompt feature="tab:ownership" title="Ownership Data" description="See institutional holders, insider trading activity, and ownership breakdowns with a Pro plan." />;
+        }
         return <OwnershipTab holders={holdersData} insiderTrades={insiderData} />;
       case 'filings':
         return <FilingsTab filings={filingsData} />;
@@ -174,16 +210,21 @@ export default async function StockPage({
 
   return (
     <>
-      {/* Top search bar */}
-      <div className="py-4">
-        <SearchBar />
+      {/* Top bar */}
+      <div className="flex items-center justify-between py-4">
+        <div className="max-w-md flex-1">
+          <SearchBar />
+        </div>
+        <div className="ml-6 shrink-0">
+          <UserMenu />
+        </div>
       </div>
 
       {/* Company header */}
       <CompanyHeader profile={safeProfile} quote={resolvedQuote} />
 
       {/* Tab navigation + content */}
-      <TabNavigation ticker={upperTicker}>
+      <TabNavigation ticker={upperTicker} plan={userPlan}>
         <Suspense fallback={<Skeleton className="h-96 w-full" />}>
           {renderTabContent()}
         </Suspense>
