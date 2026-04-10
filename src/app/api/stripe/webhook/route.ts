@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe, getPlanFromPriceId } from '@/lib/stripe';
-import { clerkClient } from '@clerk/nextjs/server';
+import { createServiceClient } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -18,25 +18,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
-  const client = await clerkClient();
+  const supabase = await createServiceClient();
 
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object;
-      const clerkUserId = session.metadata?.clerkUserId;
-      if (!clerkUserId || !session.subscription) break;
+      const userId = session.metadata?.supabaseUserId;
+      if (!userId || !session.subscription) break;
 
       const subscription = await getStripe().subscriptions.retrieve(session.subscription as string);
       const priceId = subscription.items.data[0]?.price.id;
       const plan = getPlanFromPriceId(priceId);
 
-      await client.users.updateUserMetadata(clerkUserId, {
-        publicMetadata: {
+      await supabase
+        .from('user_profiles')
+        .update({
           plan,
-          stripeCustomerId: session.customer as string,
-          stripeSubscriptionId: session.subscription as string,
-        },
-      });
+          stripe_customer_id: session.customer as string,
+          stripe_subscription_id: session.subscription as string,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
       break;
     }
 
@@ -44,20 +46,23 @@ export async function POST(req: NextRequest) {
       const subscription = event.data.object;
       const priceId = subscription.items.data[0]?.price.id;
       const plan = getPlanFromPriceId(priceId);
-
-      // Find Clerk user by stripeCustomerId
       const customerId = subscription.customer as string;
-      const matchedUser = (await client.users.getUserList({ limit: 100 })).data.find(
-        (u) => u.publicMetadata.stripeCustomerId === customerId,
-      );
-      if (matchedUser) {
-        await client.users.updateUserMetadata(matchedUser.id, {
-          publicMetadata: {
+
+      const { data: profiles } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('stripe_customer_id', customerId)
+        .limit(1);
+
+      if (profiles && profiles.length > 0) {
+        await supabase
+          .from('user_profiles')
+          .update({
             plan: subscription.status === 'active' ? plan : 'free',
-            stripeCustomerId: customerId,
-            stripeSubscriptionId: subscription.id,
-          },
-        });
+            stripe_subscription_id: subscription.id,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', profiles[0].id);
       }
       break;
     }
@@ -66,18 +71,14 @@ export async function POST(req: NextRequest) {
       const subscription = event.data.object;
       const customerId = subscription.customer as string;
 
-      const matchedUser = (await client.users.getUserList({ limit: 100 })).data.find(
-        (u) => u.publicMetadata.stripeCustomerId === customerId,
-      );
-      if (matchedUser) {
-        await client.users.updateUserMetadata(matchedUser.id, {
-          publicMetadata: {
-            plan: 'free',
-            stripeCustomerId: customerId,
-            stripeSubscriptionId: null,
-          },
-        });
-      }
+      await supabase
+        .from('user_profiles')
+        .update({
+          plan: 'free',
+          stripe_subscription_id: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('stripe_customer_id', customerId);
       break;
     }
   }

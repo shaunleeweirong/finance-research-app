@@ -1,16 +1,13 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe, PRICE_IDS } from '@/lib/stripe';
 
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const user = await currentUser();
   if (!user) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { plan, interval } = await req.json() as {
@@ -24,16 +21,22 @@ export async function POST(req: NextRequest) {
 
   const priceId = PRICE_IDS[plan][interval];
 
-  // Reuse existing Stripe customer if one exists
-  const stripeCustomerId = user.publicMetadata.stripeCustomerId as string | undefined;
+  // Check for existing Stripe customer
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('stripe_customer_id')
+    .eq('id', user.id)
+    .single();
+
+  const stripeCustomerId = profile?.stripe_customer_id;
 
   const session = await getStripe().checkout.sessions.create({
     mode: 'subscription',
     payment_method_types: ['card'],
     line_items: [{ price: priceId, quantity: 1 }],
     customer: stripeCustomerId || undefined,
-    customer_email: stripeCustomerId ? undefined : user.emailAddresses[0]?.emailAddress,
-    metadata: { clerkUserId: userId },
+    customer_email: stripeCustomerId ? undefined : user.email!,
+    metadata: { supabaseUserId: user.id },
     success_url: `${req.nextUrl.origin}/billing?success=true`,
     cancel_url: `${req.nextUrl.origin}/pricing?canceled=true`,
   });

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 import { Check, X } from 'lucide-react';
 import Link from 'next/link';
-import { AuthHeader } from '@/components/auth/auth-header';
+import { UserMenu } from '@/components/auth/user-menu';
+import type { User } from '@supabase/supabase-js';
 
 type Interval = 'monthly' | 'annual';
 
@@ -72,10 +73,15 @@ const TIERS = [
 
 export default function PricingPage() {
   const [interval, setInterval] = useState<Interval>('monthly');
-  const { isSignedIn } = useUser();
+  const [user, setUser] = useState<User | null>(null);
+  const supabase = createClient();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
+  }, [supabase]);
 
   async function handleCheckout(plan: 'pro' | 'premium') {
-    if (!isSignedIn) {
+    if (!user) {
       window.location.href = '/sign-up';
       return;
     }
@@ -92,43 +98,32 @@ export default function PricingPage() {
 
   return (
     <main className="min-h-screen bg-background px-4 py-8">
-      {/* Header */}
       <div className="mx-auto max-w-6xl">
         <div className="flex items-center justify-between mb-16">
-          <Link href="/" className="text-lg font-bold text-foreground">
-            FinanceResearch
-          </Link>
-          <AuthHeader />
+          <Link href="/" className="text-lg font-bold text-foreground">FinanceResearch</Link>
+          {user ? <UserMenu /> : (
+            <div className="flex items-center gap-3">
+              <Link href="/sign-in" className="text-sm text-text-secondary hover:text-foreground transition-colors">Sign in</Link>
+              <Link href="/sign-up" className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-500 transition-colors">Sign up</Link>
+            </div>
+          )}
         </div>
 
-        {/* Title */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-foreground mb-3">
-            Simple, transparent pricing
-          </h1>
+          <h1 className="text-4xl font-bold text-foreground mb-3">Simple, transparent pricing</h1>
           <p className="text-lg text-text-secondary max-w-lg mx-auto">
             Choose the plan that fits your research needs. Upgrade or downgrade anytime.
           </p>
-
-          {/* Interval toggle */}
           <div className="mt-8 inline-flex items-center rounded-lg bg-surface p-1">
             <button
               onClick={() => setInterval('monthly')}
-              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                interval === 'monthly'
-                  ? 'bg-surface-hover text-foreground'
-                  : 'text-text-secondary hover:text-foreground'
-              }`}
+              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${interval === 'monthly' ? 'bg-surface-hover text-foreground' : 'text-text-secondary hover:text-foreground'}`}
             >
               Monthly
             </button>
             <button
               onClick={() => setInterval('annual')}
-              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                interval === 'annual'
-                  ? 'bg-surface-hover text-foreground'
-                  : 'text-text-secondary hover:text-foreground'
-              }`}
+              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${interval === 'annual' ? 'bg-surface-hover text-foreground' : 'text-text-secondary hover:text-foreground'}`}
             >
               Annual
               <span className="ml-1.5 text-xs text-green-500 font-semibold">Save 20%</span>
@@ -136,46 +131,32 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* Pricing cards */}
         <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
           {TIERS.map((tier) => {
             const price = interval === 'monthly' ? tier.monthlyPrice : tier.annualPrice;
             return (
               <div
                 key={tier.name}
-                className={`relative rounded-xl border p-6 flex flex-col ${
-                  tier.highlighted
-                    ? 'border-blue-600 bg-surface shadow-lg shadow-blue-600/5'
-                    : 'border-border bg-surface'
-                }`}
+                className={`relative rounded-xl border p-6 flex flex-col ${tier.highlighted ? 'border-blue-600 bg-surface shadow-lg shadow-blue-600/5' : 'border-border bg-surface'}`}
               >
                 {tier.highlighted && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-3 py-0.5 text-xs font-semibold text-white">
-                    Most Popular
-                  </div>
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-3 py-0.5 text-xs font-semibold text-white">Most Popular</div>
                 )}
-
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold text-foreground">{tier.name}</h3>
                   <p className="mt-1 text-sm text-text-secondary">{tier.description}</p>
                   <div className="mt-4 flex items-baseline gap-1">
-                    <span className="text-4xl font-bold text-foreground">
-                      ${price}
-                    </span>
-                    {price > 0 && (
-                      <span className="text-sm text-text-secondary">/mo</span>
-                    )}
+                    <span className="text-4xl font-bold text-foreground">${price}</span>
+                    {price > 0 && <span className="text-sm text-text-secondary">/mo</span>}
                   </div>
                   {interval === 'annual' && price > 0 && (
-                    <p className="mt-1 text-xs text-text-muted">
-                      Billed annually (${price * 12}/yr)
-                    </p>
+                    <p className="mt-1 text-xs text-text-muted">Billed annually (${price * 12}/yr)</p>
                   )}
                 </div>
 
                 {tier.plan === 'free' ? (
                   <Link
-                    href={isSignedIn ? '/' : '/sign-up'}
+                    href={user ? '/' : '/sign-up'}
                     className="mb-6 block rounded-lg border border-border bg-background px-4 py-2.5 text-center text-sm font-medium text-foreground hover:bg-surface-hover transition-colors"
                   >
                     {tier.cta}
@@ -183,11 +164,7 @@ export default function PricingPage() {
                 ) : (
                   <button
                     onClick={() => handleCheckout(tier.plan)}
-                    className={`mb-6 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
-                      tier.highlighted
-                        ? 'bg-blue-600 text-white hover:bg-blue-500'
-                        : 'bg-foreground text-background hover:opacity-90'
-                    }`}
+                    className={`mb-6 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${tier.highlighted ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-foreground text-background hover:opacity-90'}`}
                   >
                     {tier.cta}
                   </button>
@@ -196,14 +173,8 @@ export default function PricingPage() {
                 <ul className="space-y-3 flex-1">
                   {tier.features.map((feature) => (
                     <li key={feature.name} className="flex items-center gap-2.5 text-sm">
-                      {feature.included ? (
-                        <Check className="h-4 w-4 flex-shrink-0 text-green-500" />
-                      ) : (
-                        <X className="h-4 w-4 flex-shrink-0 text-text-muted" />
-                      )}
-                      <span className={feature.included ? 'text-text-secondary' : 'text-text-muted'}>
-                        {feature.name}
-                      </span>
+                      {feature.included ? <Check className="h-4 w-4 flex-shrink-0 text-green-500" /> : <X className="h-4 w-4 flex-shrink-0 text-text-muted" />}
+                      <span className={feature.included ? 'text-text-secondary' : 'text-text-muted'}>{feature.name}</span>
                     </li>
                   ))}
                 </ul>

@@ -1,7 +1,6 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { auth, currentUser } from '@clerk/nextjs/server';
-import { UserMenu } from '@/components/auth/user-menu';
+import { createClient } from '@/lib/supabase/server';
 import { isValidTicker } from '@/lib/utils/validation';
 import {
   getCompanyProfile,
@@ -35,6 +34,7 @@ import { EstimatesTab } from '@/components/stock/estimates/estimates-tab';
 import { OwnershipTab } from '@/components/stock/ownership/ownership-tab';
 import { UpgradePrompt } from '@/components/paywall/upgrade-prompt';
 import { SearchBar } from '@/components/search/search-bar';
+import { UserMenu } from '@/components/auth/user-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getDateRangeForPeriod } from '@/lib/utils/chart-helpers';
 import { canAccess, type Plan } from '@/lib/auth/plans';
@@ -55,12 +55,17 @@ export default async function StockPage({
     notFound();
   }
 
-  // Get user plan from Clerk metadata
-  const { userId } = await auth();
+  // Get user plan from Supabase
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
   let userPlan: Plan = 'free';
-  if (userId) {
-    const user = await currentUser();
-    userPlan = (user?.publicMetadata?.plan as Plan) || 'free';
+  if (user) {
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('plan')
+      .eq('id', user.id)
+      .single();
+    userPlan = (profile?.plan as Plan) || 'free';
   }
 
   // If user tries to access a gated tab via URL, fall back to overview
@@ -85,14 +90,12 @@ export default async function StockPage({
     getBalanceSheet(upperTicker, 'annual', 10),
     getCashFlowStatement(upperTicker, 'annual', 10),
     getRatios(upperTicker, 'annual', 10),
-    // Segments — only fetch when Financials tab is active and user has access
     activeTab === 'financials' && canAccess(userPlan, 'financials:segments')
       ? getRevenueProductSegmentation(upperTicker)
       : Promise.resolve([]),
     activeTab === 'financials' && canAccess(userPlan, 'financials:segments')
       ? getRevenueGeographicSegmentation(upperTicker)
       : Promise.resolve([]),
-    // Tab-specific data — only fetch when needed and user has access
     activeTab === 'news' ? getStockNews(upperTicker, 20) : Promise.resolve([]),
     activeTab === 'filings' ? getSecFilings(upperTicker, undefined, 40) : Promise.resolve([]),
     activeTab === 'estimates' && canAccess(userPlan, 'tab:estimates')
@@ -115,14 +118,11 @@ export default async function StockPage({
       : Promise.resolve([]),
   ]);
 
-  // If no profile found, show 404
   if (!profile) {
     notFound();
   }
-  // TypeScript narrowing: profile is non-null past this point
   const safeProfile = profile;
 
-  // Quote fallback — build minimal quote from profile if quote endpoint fails
   const resolvedQuote: FMPQuote = quote ?? {
     symbol: safeProfile.symbol,
     name: safeProfile.companyName,
@@ -210,7 +210,6 @@ export default async function StockPage({
 
   return (
     <>
-      {/* Top bar */}
       <div className="flex items-center justify-between py-4">
         <div className="max-w-md flex-1">
           <SearchBar />
@@ -220,10 +219,8 @@ export default async function StockPage({
         </div>
       </div>
 
-      {/* Company header */}
       <CompanyHeader profile={safeProfile} quote={resolvedQuote} />
 
-      {/* Tab navigation + content */}
       <TabNavigation ticker={upperTicker} plan={userPlan}>
         <Suspense fallback={<Skeleton className="h-96 w-full" />}>
           {renderTabContent()}
