@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-const publicRoutes = ['/', '/sign-in', '/sign-up', '/pricing', '/auth/callback', '/api/stripe/webhook'];
+const publicRoutes = ['/', '/sign-in', '/sign-up', '/pricing', '/auth/callback', '/api/'];
 
 function isPublicRoute(pathname: string) {
   return publicRoutes.some((route) => pathname === route || pathname.startsWith(route + '/'));
@@ -33,8 +33,12 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Redirect unauthenticated users from protected routes
+  // Protect non-public routes for unauthenticated users
   if (!user && !isPublicRoute(request.nextUrl.pathname)) {
+    // API routes get 401 JSON instead of redirect
+    if (request.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = '/sign-in';
     return NextResponse.redirect(url);

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe, PRICE_IDS } from '@/lib/stripe';
 
@@ -21,25 +22,48 @@ export async function POST(req: NextRequest) {
 
   const priceId = PRICE_IDS[plan][interval];
 
-  // Check for existing Stripe customer
-  const { data: profile } = await supabase
+  // Get or create Stripe customer
+  const serviceClient = await createServiceClient();
+  const { data: profile } = await serviceClient
     .from('user_profiles')
     .select('stripe_customer_id')
     .eq('id', user.id)
     .single();
 
-  const stripeCustomerId = profile?.stripe_customer_id;
+  let customerId = profile?.stripe_customer_id;
 
-  const session = await getStripe().checkout.sessions.create({
-    mode: 'subscription',
-    payment_method_types: ['card'],
-    line_items: [{ price: priceId, quantity: 1 }],
-    customer: stripeCustomerId || undefined,
-    customer_email: stripeCustomerId ? undefined : user.email!,
-    metadata: { supabaseUserId: user.id },
-    success_url: `${req.nextUrl.origin}/billing?success=true`,
-    cancel_url: `${req.nextUrl.origin}/pricing?canceled=true`,
-  });
+  if (!customerId) {
+    // Create a Stripe customer first (required for Accounts V2)
+    const customer = await getStripe().customers.create({
+      email: user.email!,
+      metadata: { supabaseUserId: user.id },
+    });
+    customerId = customer.id;
 
-  return NextResponse.json({ url: session.url });
+    // Save customer ID to profile
+    await serviceClient
+      .from('user_profiles')
+      .update({ stripe_customer_id: customerId, updated_at: new Date().toISOString() })
+      .eq('id', user.id);
+  }
+
+  try {
+    const session = await getStripe().checkout.sessions.create({
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      line_items: [{ price: priceId, quantity: 1 }],
+      customer: customerId,
+      metadata: { supabaseUserId: user.id },
+      success_url: `${req.nextUrl.origin}/billing?success=true`,
+      cancel_url: `${req.nextUrl.origin}/pricing?canceled=true`,
+    });
+
+    return NextResponse.json({ url: session.url });
+  } catch (err) {
+    console.error('Stripe checkout error:', err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Failed to create checkout' },
+      { status: 500 },
+    );
+  }
 }
