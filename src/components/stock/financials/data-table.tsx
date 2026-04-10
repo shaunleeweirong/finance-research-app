@@ -11,6 +11,7 @@ interface DataTableProps {
   selectedMetrics: Set<string>;
   activeUnit: DataUnit;
   onMetricToggle: (key: string) => void;
+  showChange?: boolean;
 }
 
 function formatValue(value: unknown, format: LineItemConfig['format'], unit: DataUnit): string {
@@ -43,7 +44,26 @@ function isNegative(value: unknown): boolean {
   return typeof value === 'number' && value < 0;
 }
 
-export function DataTable({ data, lineItems, selectedMetrics, activeUnit, onMetricToggle }: DataTableProps) {
+function formatYoYChange(current: unknown, previous: unknown): string {
+  const cur = typeof current === 'number' ? current : null;
+  const prev = typeof previous === 'number' ? previous : null;
+  if (cur === null || prev === null || prev === 0) return '—';
+  const change = ((cur - prev) / Math.abs(prev)) * 100;
+  const sign = change > 0 ? '+' : '';
+  return `${sign}${change.toFixed(1)}%`;
+}
+
+function getYoYColor(current: unknown, previous: unknown): string {
+  const cur = typeof current === 'number' ? current : null;
+  const prev = typeof previous === 'number' ? previous : null;
+  if (cur === null || prev === null || prev === 0) return 'text-text-muted';
+  const change = ((cur - prev) / Math.abs(prev)) * 100;
+  if (change > 0) return 'text-positive';
+  if (change < 0) return 'text-negative';
+  return 'text-text-muted';
+}
+
+export function DataTable({ data, lineItems, selectedMetrics, activeUnit, onMetricToggle, showChange = false }: DataTableProps) {
   if (data.length === 0) {
     return (
       <div className="flex h-40 items-center justify-center text-text-muted">
@@ -99,14 +119,20 @@ export function DataTable({ data, lineItems, selectedMetrics, activeUnit, onMetr
                 </td>
                 {data.map((d, i) => {
                   const val = d[item.key];
+                  const prevVal = data[i + 1]?.[item.key];
                   return (
                     <td
                       key={`${item.key}-${i}`}
-                      className={`px-4 py-2.5 text-right font-mono text-sm whitespace-nowrap ${
-                        isNegative(val) ? 'text-negative' : 'text-foreground'
-                      }`}
+                      className="px-4 py-2 text-right font-mono text-sm whitespace-nowrap"
                     >
-                      {formatValue(val, item.format, activeUnit)}
+                      <span className={isNegative(val) ? 'text-negative' : 'text-foreground'}>
+                        {formatValue(val, item.format, activeUnit)}
+                      </span>
+                      {showChange && (
+                        <span className={`block text-[11px] ${getYoYColor(val, prevVal)}`}>
+                          {formatYoYChange(val, prevVal)}
+                        </span>
+                      )}
                     </td>
                   );
                 })}

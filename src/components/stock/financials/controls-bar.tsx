@@ -21,6 +21,8 @@ interface ControlsBarProps {
   onUnitChange: (unit: DataUnit) => void;
   isLoading: boolean;
   plan?: Plan;
+  showChange?: boolean;
+  onShowChangeToggle?: () => void;
 }
 
 const PERIODS = [
@@ -43,6 +45,8 @@ export function ControlsBar({
   onUnitChange,
   isLoading,
   plan = 'free',
+  showChange = false,
+  onShowChangeToggle,
 }: ControlsBarProps) {
   const depthSuffix = activePeriod === 'annual' ? 'Y' : 'Q';
 
@@ -73,6 +77,29 @@ export function ControlsBar({
       </div>
 
       <div className="flex flex-wrap items-end gap-4">
+        {/* % Change toggle */}
+        {onShowChangeToggle && (
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] uppercase tracking-wider text-text-muted font-medium">
+              Display
+            </span>
+            <div className="flex rounded-lg bg-background p-0.5">
+              <button
+                onClick={onShowChangeToggle}
+                disabled={isLoading}
+                title={showChange ? 'Show absolute values' : 'Show year-over-year % change'}
+                className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                  showChange
+                    ? 'bg-surface-hover text-foreground'
+                    : 'text-text-secondary hover:text-foreground'
+                } disabled:opacity-50`}
+              >
+                % Chg
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Unit toggle — K / M / B */}
         <div className="flex flex-col gap-1">
           <span className="text-[10px] uppercase tracking-wider text-text-muted font-medium">

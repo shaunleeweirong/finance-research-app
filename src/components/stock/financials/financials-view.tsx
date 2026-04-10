@@ -44,6 +44,7 @@ export function FinancialsView({ ticker, initialData, plan = 'free' }: Financial
   });
   const [selectedMetrics, setSelectedMetrics] = useState<Map<string, { chartType: 'bar' | 'line' }>>(new Map());
   const [isLoading, setIsLoading] = useState(false);
+  const [showChange, setShowChange] = useState(false);
 
   const unlimitedMetrics = canAccess(plan, 'financials:unlimited-metrics');
 
@@ -195,6 +196,8 @@ export function FinancialsView({ ticker, initialData, plan = 'free' }: Financial
         onUnitChange={handleUnitChange}
         isLoading={isLoading}
         plan={plan}
+        showChange={showChange}
+        onShowChangeToggle={() => setShowChange((prev) => !prev)}
       />
 
       {/* Content: segments view OR data table */}
@@ -213,6 +216,7 @@ export function FinancialsView({ ticker, initialData, plan = 'free' }: Financial
           selectedMetrics={selectedSet}
           activeUnit={activeUnit}
           onMetricToggle={handleMetricToggle}
+          showChange={showChange}
         />
       )}
     </div>
