@@ -65,13 +65,21 @@ export function FinancialsView({ ticker, initialData, plan = 'free' }: Financial
   const currentData = dataCache[cacheKey] || [];
   const currentConfig = STATEMENT_CONFIGS[activeStatement];
 
-  // Build label lookup for chart legend
+  // Build label and format lookups for chart
   const metricLabels = useMemo(() => {
     const labels: Record<string, string> = {};
     currentConfig.items.forEach((item) => {
       labels[item.key] = item.label;
     });
     return labels;
+  }, [currentConfig]);
+
+  const metricFormats = useMemo(() => {
+    const formats: Record<string, string> = {};
+    currentConfig.items.forEach((item) => {
+      formats[item.key] = item.format;
+    });
+    return formats;
   }, [currentConfig]);
 
   const fetchData = useCallback(
@@ -177,6 +185,7 @@ export function FinancialsView({ ticker, initialData, plan = 'free' }: Financial
           data={currentData}
           selectedMetrics={selectedMetrics}
           metricLabels={metricLabels}
+          metricFormats={metricFormats}
           activePeriod={activePeriod}
           activeUnit={activeUnit}
           onChartTypeChange={handleChartTypeChange}

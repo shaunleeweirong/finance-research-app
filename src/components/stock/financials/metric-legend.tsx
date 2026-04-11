@@ -6,6 +6,7 @@ import { UNIT_LABEL_PLURAL, type DataUnit } from '@/lib/utils/format';
 interface MetricLegendProps {
   selectedMetrics: Map<string, { chartType: 'bar' | 'line' }>;
   metricLabels: Record<string, string>;
+  metricFormats?: Record<string, string>;
   metricData: Record<string, number[]>;
   years: number;
   activePeriod: 'annual' | 'quarter';
@@ -17,6 +18,7 @@ interface MetricLegendProps {
 export function MetricLegend({
   selectedMetrics,
   metricLabels,
+  metricFormats = {},
   metricData,
   years,
   activePeriod,
@@ -45,11 +47,13 @@ export function MetricLegend({
             {/* Color swatch */}
             <div className="h-3 w-3 rounded-sm shrink-0" style={{ backgroundColor: color }} />
 
-            {/* Metric name + qualifiers (Fiscal.ai style) */}
+            {/* Metric name + qualifiers */}
             <span className="text-text-secondary font-medium min-w-0">
               {metricLabels[key] || key}{' '}
               <span className="text-text-muted font-normal">({periodLabel})</span>
-              <span className="text-text-muted font-normal"> ({magnitudeLabel})</span>
+              {metricFormats[key] !== 'ratio' && metricFormats[key] !== 'percent' && (
+                <span className="text-text-muted font-normal"> ({magnitudeLabel})</span>
+              )}
             </span>
 
             {/* Total Change */}

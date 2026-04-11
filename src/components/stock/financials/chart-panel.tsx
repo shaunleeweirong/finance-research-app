@@ -15,7 +15,7 @@ import {
 import { Card } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { CHART_COLORS } from '@/lib/utils/chart-helpers';
-import { formatInUnit, type DataUnit } from '@/lib/utils/format';
+import { formatInUnit, formatNumber, formatPercent, type DataUnit } from '@/lib/utils/format';
 import { MetricLegend } from './metric-legend';
 import { toPng } from 'html-to-image';
 import type { FinancialRecord } from '@/lib/fmp/types';
@@ -24,10 +24,23 @@ interface ChartPanelProps {
   data: FinancialRecord[];
   selectedMetrics: Map<string, { chartType: 'bar' | 'line' }>;
   metricLabels: Record<string, string>;
+  metricFormats?: Record<string, string>;
   activePeriod: 'annual' | 'quarter';
   activeUnit: DataUnit;
   onChartTypeChange: (key: string, type: 'bar' | 'line') => void;
   onRemove: (key: string) => void;
+}
+
+function formatMetricValue(value: number | null, format: string | undefined, unit: DataUnit, compact: boolean): string {
+  if (value === null || value === undefined || isNaN(value)) return 'N/A';
+  switch (format) {
+    case 'ratio':
+      return formatNumber(value, 2);
+    case 'percent':
+      return formatPercent(value * 100);
+    default:
+      return formatInUnit(value, unit, !compact, false);
+  }
 }
 
 function getPeriodLabel(item: FinancialRecord): string {
@@ -41,6 +54,7 @@ export function ChartPanel({
   data,
   selectedMetrics,
   metricLabels,
+  metricFormats = {},
   activePeriod,
   activeUnit,
   onChartTypeChange,
@@ -165,7 +179,12 @@ export function ChartPanel({
               tick={{ fill: '#cbd5e1', fontSize: 11 }}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(v: number) => formatInUnit(v, activeUnit, false, false)}
+              tickFormatter={(v: number) => {
+                // Use the format of the first selected metric for Y-axis
+                const firstKey = entries[0]?.[0];
+                const fmt = firstKey ? metricFormats[firstKey] : undefined;
+                return formatMetricValue(v, fmt, activeUnit, true);
+              }}
               width={70}
             />
             <Tooltip
@@ -176,10 +195,13 @@ export function ChartPanel({
                 color: '#f8fafc',
                 fontSize: '12px',
               }}
-              formatter={(value: unknown, name: unknown) => [
-                formatInUnit(typeof value === 'number' ? value : null, activeUnit, true, false),
-                typeof name === 'string' ? (metricLabels[name] || name) : String(name),
-              ]}
+              formatter={(value: unknown, name: unknown) => {
+                const key = typeof name === 'string' ? name : String(name);
+                return [
+                  formatMetricValue(typeof value === 'number' ? value : null, metricFormats[key], activeUnit, false),
+                  metricLabels[key] || key,
+                ];
+              }}
             />
             {entries.map(([key, { chartType }], index) => {
               const color = CHART_COLORS[index % CHART_COLORS.length];
@@ -201,7 +223,7 @@ export function ChartPanel({
                   <LabelList
                     dataKey={key}
                     position="top"
-                    formatter={(v: unknown) => formatInUnit(typeof v === 'number' ? v : null, activeUnit, false, false)}
+                    formatter={(v: unknown) => formatMetricValue(typeof v === 'number' ? v : null, metricFormats[key], activeUnit, true)}
                     style={{ fill: '#e2e8f0', fontSize: 10 }}
                   />
                 </Bar>
@@ -249,6 +271,7 @@ export function ChartPanel({
       <MetricLegend
         selectedMetrics={selectedMetrics}
         metricLabels={metricLabels}
+        metricFormats={metricFormats}
         metricData={metricData}
         years={years}
         activePeriod={activePeriod}
