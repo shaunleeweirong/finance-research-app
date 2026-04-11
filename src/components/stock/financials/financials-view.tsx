@@ -65,11 +65,13 @@ export function FinancialsView({ ticker, initialData, plan = 'free' }: Financial
   const currentData = dataCache[cacheKey] || [];
   const currentConfig = STATEMENT_CONFIGS[activeStatement];
 
-  // Build label and format lookups for chart
+  // Build label and format lookups for chart.
+  // `${key}:pct` variants represent the YoY % change series for that metric.
   const metricLabels = useMemo(() => {
     const labels: Record<string, string> = {};
     currentConfig.items.forEach((item) => {
       labels[item.key] = item.label;
+      labels[`${item.key}:pct`] = `${item.label} % Chg`;
     });
     return labels;
   }, [currentConfig]);
@@ -78,6 +80,7 @@ export function FinancialsView({ ticker, initialData, plan = 'free' }: Financial
     const formats: Record<string, string> = {};
     currentConfig.items.forEach((item) => {
       formats[item.key] = item.format;
+      formats[`${item.key}:pct`] = 'percent';
     });
     return formats;
   }, [currentConfig]);

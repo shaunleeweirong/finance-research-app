@@ -1,5 +1,6 @@
 'use client';
 
+import { Fragment } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { LineItemConfig } from '@/config/financial-line-items';
 import { formatInUnit, formatPercent, formatNumber, type DataUnit } from '@/lib/utils/format';
@@ -96,47 +97,75 @@ export function DataTable({ data, lineItems, selectedMetrics, activeUnit, onMetr
         <tbody>
           {lineItems.map((item) => {
             const isSelected = selectedMetrics.has(item.key);
+            const pctKey = `${item.key}:pct`;
+            const isPctSelected = selectedMetrics.has(pctKey);
             return (
-              <tr
-                key={item.key}
-                className={`border-b border-border transition-colors hover:bg-surface-hover ${
-                  isSelected ? 'bg-primary/5' : ''
-                }`}
-              >
-                <td className="sticky left-0 z-10 bg-surface px-4 py-2.5 min-w-[250px]">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => onMetricToggle(item.key)}
-                      className="shrink-0"
-                    />
-                    <span
-                      className={`text-sm ${item.indent ? 'pl-4 text-text-secondary' : 'font-medium text-foreground'}`}
-                    >
-                      {item.label}
-                    </span>
-                  </div>
-                </td>
-                {data.map((d, i) => {
-                  const val = d[item.key];
-                  const prevVal = data[i + 1]?.[item.key];
-                  return (
+              <Fragment key={item.key}>
+                <tr
+                  className={`border-b border-border transition-colors hover:bg-surface-hover ${
+                    isSelected ? 'bg-primary/5' : ''
+                  }`}
+                >
+                  <td className="sticky left-0 z-10 bg-surface px-4 py-2.5 min-w-[250px]">
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => onMetricToggle(item.key)}
+                        className="shrink-0"
+                      />
+                      <span
+                        className={`text-sm ${item.indent ? 'pl-4 text-text-secondary' : 'font-medium text-foreground'}`}
+                      >
+                        {item.label}
+                      </span>
+                    </div>
+                  </td>
+                  {data.map((d, i) => (
                     <td
                       key={`${item.key}-${i}`}
                       className="px-4 py-2 text-right font-mono text-sm whitespace-nowrap"
                     >
-                      <span className={isNegative(val) ? 'text-negative' : 'text-foreground'}>
-                        {formatValue(val, item.format, activeUnit)}
+                      <span className={isNegative(d[item.key]) ? 'text-negative' : 'text-foreground'}>
+                        {formatValue(d[item.key], item.format, activeUnit)}
                       </span>
-                      {showChange && (
-                        <span className={`block text-[11px] ${getYoYColor(val, prevVal)}`}>
-                          {formatYoYChange(val, prevVal)}
-                        </span>
-                      )}
                     </td>
-                  );
-                })}
-              </tr>
+                  ))}
+                </tr>
+                {showChange && (
+                  <tr
+                    className={`border-b border-border bg-surface/40 transition-colors hover:bg-surface-hover ${
+                      isPctSelected ? 'bg-primary/5' : ''
+                    }`}
+                  >
+                    <td className="sticky left-0 z-10 bg-surface/80 px-4 py-2 min-w-[250px]">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={isPctSelected}
+                          onCheckedChange={() => onMetricToggle(pctKey)}
+                          className="shrink-0"
+                        />
+                        <span className={`text-xs italic text-text-muted ${item.indent ? 'pl-4' : ''}`}>
+                          % Chg (YoY)
+                        </span>
+                      </div>
+                    </td>
+                    {data.map((d, i) => {
+                      const val = d[item.key];
+                      const prevVal = data[i + 1]?.[item.key];
+                      return (
+                        <td
+                          key={`${pctKey}-${i}`}
+                          className="px-4 py-2 text-right font-mono text-xs whitespace-nowrap"
+                        >
+                          <span className={getYoYColor(val, prevVal)}>
+                            {formatYoYChange(val, prevVal)}
+                          </span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                )}
+              </Fragment>
             );
           })}
         </tbody>

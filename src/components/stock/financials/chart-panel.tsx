@@ -63,12 +63,25 @@ export function ChartPanel({
   const chartRef = useRef<HTMLDivElement>(null);
   const entries = Array.from(selectedMetrics.entries());
 
-  // Full chronological data: oldest first, newest last
+  // Full chronological data: oldest first, newest last.
+  // `${key}:pct` series are computed as YoY change vs. previous chronological row.
   const fullChartData = useMemo(() => {
-    return [...data].reverse().map((d) => {
+    const chron = [...data].reverse();
+    return chron.map((d, i) => {
       const point: Record<string, unknown> = { period: getPeriodLabel(d) };
       entries.forEach(([key]) => {
-        point[key] = d[key] ?? null;
+        if (key.endsWith(':pct')) {
+          const baseKey = key.slice(0, -4);
+          const cur = d[baseKey];
+          const prev = i > 0 ? chron[i - 1][baseKey] : null;
+          if (typeof cur === 'number' && typeof prev === 'number' && prev !== 0) {
+            point[key] = (cur - prev) / Math.abs(prev);
+          } else {
+            point[key] = null;
+          }
+        } else {
+          point[key] = d[key] ?? null;
+        }
       });
       return point;
     });
