@@ -60,8 +60,9 @@ const TIERS = [
     monthlyPrice: 35,
     annualPrice: 28,
     description: 'Full platform access with AI features',
-    cta: 'Start Premium',
+    cta: 'Coming Soon',
     highlighted: false,
+    comingSoon: true,
     features: [
       { name: 'Everything in Pro', included: true },
       { name: 'AI Copilot (200 queries/mo)', included: true },
@@ -169,10 +170,17 @@ export default function PricingPage() {
                   >
                     {tier.cta}
                   </Link>
+                ) : 'comingSoon' in tier && tier.comingSoon ? (
+                  <button
+                    disabled
+                    className="mb-6 w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm font-medium text-text-muted cursor-not-allowed opacity-60"
+                  >
+                    Coming Soon
+                  </button>
                 ) : (
                   <button
                     onClick={() => handleCheckout(tier.plan)}
-                    className={`mb-6 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${tier.highlighted ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-foreground text-background hover:opacity-90'}`}
+                    className={`mb-6 w-full rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${tier.highlighted ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-foreground text-background hover:opacity-90'}`}
                   >
                     {tier.cta}
                   </button>

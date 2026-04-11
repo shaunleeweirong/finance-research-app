@@ -117,6 +117,10 @@ export function BillingContent() {
             <p className="text-xs text-text-muted text-center">Change plan, update payment method, or cancel via Stripe Customer Portal</p>
           </div>
         )}
+
+        <Link href="/pricing" className="mt-4 block text-center text-sm text-text-secondary hover:text-foreground transition-colors">
+          Compare plans
+        </Link>
       </div>
     </main>
   );
