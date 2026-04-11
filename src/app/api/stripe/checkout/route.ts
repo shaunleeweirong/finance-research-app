@@ -59,10 +59,20 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ url: session.url });
-  } catch (err) {
-    console.error('Stripe checkout error:', err);
+  } catch (err: unknown) {
+    const error = err as { message?: string; type?: string; code?: string; statusCode?: number };
+    console.error('Stripe checkout error:', JSON.stringify({
+      message: error.message,
+      type: error.type,
+      code: error.code,
+      statusCode: error.statusCode,
+    }));
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Failed to create checkout' },
+      {
+        error: error.message || 'Failed to create checkout',
+        type: error.type,
+        code: error.code,
+      },
       { status: 500 },
     );
   }

@@ -96,7 +96,7 @@ export default function PricingPage() {
         window.location.href = data.url;
       } else {
         console.error('Checkout error:', data);
-        alert(data.error || 'Failed to create checkout session');
+        alert(`${data.error || 'Failed to create checkout session'}\nType: ${data.type || 'unknown'}\nCode: ${data.code || 'none'}`);
       }
     } catch (err) {
       console.error('Checkout error:', err);
