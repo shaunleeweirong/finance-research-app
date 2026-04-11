@@ -15,10 +15,13 @@ export async function getRatios(
   );
 }
 
-export async function getKeyMetrics(ticker: string): Promise<FMPKeyMetrics[]> {
+export async function getKeyMetrics(
+  ticker: string,
+  limit: number = 10,
+): Promise<FMPKeyMetrics[]> {
   return fmpFetch<FMPKeyMetrics[]>(
     `/key-metrics/${ticker}`,
-    { period: 'annual', limit: '1' },
+    { period: 'annual', limit: String(limit) },
     21600
   );
 }
