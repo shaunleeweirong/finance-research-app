@@ -118,8 +118,9 @@ export function BillingContent() {
           </div>
         )}
 
-        <Link href="/pricing" className="mt-4 block text-center text-sm text-text-secondary hover:text-foreground transition-colors">
+        <Link href="/pricing" className="mt-4 flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm text-text-secondary hover:bg-surface-hover hover:text-foreground transition-colors">
           Compare plans
+          <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
     </main>
