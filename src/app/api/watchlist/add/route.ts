@@ -5,10 +5,9 @@ import { canAccess } from '@/lib/auth/plans';
 import { getUserPlan } from '@/lib/auth/get-user-plan';
 
 export async function POST(request: NextRequest) {
-  // CSRF protection: validate Origin
+  // CSRF protection: validate Origin matches the server's own origin
   const origin = request.headers.get('origin');
-  const appOrigin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  if (origin && !origin.includes(new URL(appOrigin).hostname)) {
+  if (origin && origin !== request.nextUrl.origin) {
     return NextResponse.json({ error: 'Invalid origin' }, { status: 403 });
   }
 
