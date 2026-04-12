@@ -1,0 +1,432 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1775898004659,
+  "projectRoot": "/Users/leeshaun/Desktop/Apps/finance-research-app",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "next",
+        "version": "16.2.2",
+        "category": "fullstack"
+      },
+      {
+        "name": "react",
+        "version": "19.2.4",
+        "category": "frontend"
+      },
+      {
+        "name": "react-dom",
+        "version": "19.2.4",
+        "category": "frontend"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": null,
+    "lintCommand": "npm run lint",
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "next dev",
+      "build": "next build",
+      "start": "next start",
+      "lint": "eslint"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": "type-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "src"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 1,
+      "lastAccessed": 1775898004627,
+      "keyFiles": []
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 2,
+      "lastAccessed": 1775898004629,
+      "keyFiles": [
+        "middleware.ts"
+      ]
+    },
+    "src/app": {
+      "path": "src/app",
+      "purpose": "Application code",
+      "fileCount": 7,
+      "lastAccessed": 1775898004642,
+      "keyFiles": [
+        "error.tsx",
+        "favicon.ico",
+        "globals.css"
+      ]
+    },
+    "src/components": {
+      "path": "src/components",
+      "purpose": "UI components",
+      "fileCount": 2,
+      "lastAccessed": 1775898004651,
+      "keyFiles": [
+        "placeholder-tab.tsx"
+      ]
+    },
+    "src/config": {
+      "path": "src/config",
+      "purpose": "Configuration files",
+      "fileCount": 1,
+      "lastAccessed": 1775898004652,
+      "keyFiles": [
+        "financial-line-items.ts"
+      ]
+    },
+    "src/lib": {
+      "path": "src/lib",
+      "purpose": "Library code",
+      "fileCount": 3,
+      "lastAccessed": 1775898004659,
+      "keyFiles": [
+        "stripe.ts",
+        "utils.ts"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src/app/stock/[ticker]/page.tsx",
+      "accessCount": 23,
+      "lastAccessed": 1775917396302,
+      "type": "file"
+    },
+    {
+      "path": "src/components/stock/financials/chart-panel.tsx",
+      "accessCount": 13,
+      "lastAccessed": 1775898139829,
+      "type": "file"
+    },
+    {
+      "path": "src/components/stock/financials/data-table.tsx",
+      "accessCount": 13,
+      "lastAccessed": 1775898661762,
+      "type": "file"
+    },
+    {
+      "path": ".env.local",
+      "accessCount": 11,
+      "lastAccessed": 1775869266554,
+      "type": "file"
+    },
+    {
+      "path": "src/components/stock/financials/financials-view.tsx",
+      "accessCount": 11,
+      "lastAccessed": 1775898129285,
+      "type": "file"
+    },
+    {
+      "path": "src/app/page.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1775787944959,
+      "type": "file"
+    },
+    {
+      "path": "src/middleware.ts",
+      "accessCount": 9,
+      "lastAccessed": 1775874332896,
+      "type": "file"
+    },
+    {
+      "path": "src/app/api/stripe/checkout/route.ts",
+      "accessCount": 8,
+      "lastAccessed": 1775872618982,
+      "type": "file"
+    },
+    {
+      "path": "src/app/pricing/page.tsx",
+      "accessCount": 8,
+      "lastAccessed": 1775878630719,
+      "type": "file"
+    },
+    {
+      "path": "src/app/api/stripe/webhook/route.ts",
+      "accessCount": 6,
+      "lastAccessed": 1775788000236,
+      "type": "file"
+    },
+    {
+      "path": "src/components/stock/financials/controls-bar.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1775824030510,
+      "type": "file"
+    },
+    {
+      "path": "src/app/billing/billing-content.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1775879498739,
+      "type": "file"
+    },
+    {
+      "path": "src/components/stock/financials/metric-legend.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1775880612461,
+      "type": "file"
+    },
+    {
+      "path": "src/lib/fmp/types.ts",
+      "accessCount": 5,
+      "lastAccessed": 1775916906352,
+      "type": "file"
+    },
+    {
+      "path": "src/components/stock/tab-navigation.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1775746169703,
+      "type": "file"
+    },
+    {
+      "path": "src/components/auth/auth-header.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1775752720156,
+      "type": "file"
+    },
+    {
+      "path": "src/app/layout.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1775787918626,
+      "type": "file"
+    },
+    {
+      "path": "src/app/api/stripe/portal/route.ts",
+      "accessCount": 4,
+      "lastAccessed": 1775788002687,
+      "type": "file"
+    },
+    {
+      "path": "src/lib/stripe.ts",
+      "accessCount": 4,
+      "lastAccessed": 1775873241953,
+      "type": "file"
+    },
+    {
+      "path": "src/app/stock/[ticker]/layout.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1775753530605,
+      "type": "file"
+    },
+    {
+      "path": "src/components/search/search-bar.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1775753531285,
+      "type": "file"
+    },
+    {
+      "path": "src",
+      "accessCount": 3,
+      "lastAccessed": 1775788104717,
+      "type": "directory"
+    },
+    {
+      "path": "src/config/financial-line-items.ts",
+      "accessCount": 3,
+      "lastAccessed": 1775898030627,
+      "type": "file"
+    },
+    {
+      "path": "src/lib/utils/format.ts",
+      "accessCount": 3,
+      "lastAccessed": 1775917338241,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 2,
+      "lastAccessed": 1775745836819,
+      "type": "directory"
+    },
+    {
+      "path": "src/app/billing/page.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1775746439032,
+      "type": "file"
+    },
+    {
+      "path": "src/app/sign-in/[[...sign-in]]/page.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1775787876782,
+      "type": "file"
+    },
+    {
+      "path": "src/app/sign-up/[[...sign-up]]/page.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1775787892758,
+      "type": "file"
+    },
+    {
+      "path": "src/components/auth/user-menu.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1775787914983,
+      "type": "file"
+    },
+    {
+      "path": "src/lib/fmp/endpoints/ratios.ts",
+      "accessCount": 2,
+      "lastAccessed": 1775917346619,
+      "type": "file"
+    },
+    {
+      "path": "src/components/stock/financials/segments-view.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1775745828550,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 1,
+      "lastAccessed": 1775745829566,
+      "type": "file"
+    },
+    {
+      "path": "tsconfig.json",
+      "accessCount": 1,
+      "lastAccessed": 1775745834875,
+      "type": "file"
+    },
+    {
+      "path": "next.config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775745834953,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/tabs.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1775745842029,
+      "type": "file"
+    },
+    {
+      "path": "src/app/globals.css",
+      "accessCount": 1,
+      "lastAccessed": 1775745851139,
+      "type": "file"
+    },
+    {
+      "path": "src/components/stock/company-header.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1775745856469,
+      "type": "file"
+    },
+    {
+      "path": "src/lib/fmp/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775745861278,
+      "type": "file"
+    },
+    {
+      "path": "src/app/api/fmp/search/route.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775745864910,
+      "type": "file"
+    },
+    {
+      "path": "src/components/stock/estimates/estimates-tab.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1775745865837,
+      "type": "file"
+    },
+    {
+      "path": "src/lib/auth/plans.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775746090336,
+      "type": "file"
+    },
+    {
+      "path": "src/components/paywall/upgrade-prompt.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1775746155976,
+      "type": "file"
+    },
+    {
+      "path": "src/app/api/stripe",
+      "accessCount": 1,
+      "lastAccessed": 1775746408131,
+      "type": "directory"
+    },
+    {
+      "path": "src/lib/supabase/client.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775787842011,
+      "type": "file"
+    },
+    {
+      "path": "src/lib/supabase/server.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775787846043,
+      "type": "file"
+    },
+    {
+      "path": "src/app/auth/callback/route.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775787896066,
+      "type": "file"
+    },
+    {
+      "path": "src/app/api/debug/route.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775833248205,
+      "type": "file"
+    },
+    {
+      "path": "src/app/api/debug/stripe/route.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775873141161,
+      "type": "file"
+    },
+    {
+      "path": "src/components/stock/overview/key-metrics.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1775916882341,
+      "type": "file"
+    },
+    {
+      "path": "src/lib/fmp/endpoints/quote.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775916888314,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
