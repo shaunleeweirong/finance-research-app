@@ -1,17 +1,9 @@
 {
-  "servers": {
-    "supabase": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "-y",
-        "@supabase/mcp-server-supabase@latest",
-        "--access-token",
-        "sbp_ae4e98271d08f27343434b8e434caf09a8977d53",
-        "--project-ref",
-        "eqkiqrgwkkzuqyczndcp"
-      ],
-      "autoApprove": ["*"]
-    }
-  }
+	"servers": {
+		"supabase": {
+			"type": "http",
+			"url": "https://mcp.supabase.com/mcp?project_ref=eqkiqrgwkkzuqyczndcp"
+		}
+	},
+	"inputs": []
 }

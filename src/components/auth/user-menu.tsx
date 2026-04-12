@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { CreditCard, LogOut, User } from 'lucide-react';
+import { CreditCard, LogOut, Star } from 'lucide-react';
 import Link from 'next/link';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -64,6 +64,14 @@ export function UserMenu() {
             <p className="text-xs text-text-muted truncate">{user.email}</p>
           </div>
           <div className="py-1">
+            <Link
+              href="/watchlist"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2 text-sm text-text-secondary hover:bg-surface-hover hover:text-foreground transition-colors"
+            >
+              <Star className="h-4 w-4" />
+              Watchlist
+            </Link>
             <Link
               href="/billing"
               onClick={() => setOpen(false)}

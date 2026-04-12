@@ -36,10 +36,12 @@ import { OwnershipTab } from '@/components/stock/ownership/ownership-tab';
 import { UpgradePrompt } from '@/components/paywall/upgrade-prompt';
 import { SearchBar } from '@/components/search/search-bar';
 import { UserMenu } from '@/components/auth/user-menu';
+import { WatchlistToggleButton } from '@/components/watchlist/watchlist-toggle-button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getDateRangeForPeriod } from '@/lib/utils/chart-helpers';
 import { canAccess, type Plan } from '@/lib/auth/plans';
 import type { FMPQuote } from '@/lib/fmp/types';
+import Link from 'next/link';
 
 export default async function StockPage({
   params,
@@ -67,6 +69,20 @@ export default async function StockPage({
       .eq('id', user.id)
       .single();
     userPlan = (profile?.plan as Plan) || 'free';
+  }
+
+  const canManageWatchlist = canAccess(userPlan, 'watchlist:basic');
+  let isWatchlisted = false;
+
+  if (user && canManageWatchlist) {
+    const { data: watchlistItem } = await supabase
+      .from('watchlist')
+      .select('ticker')
+      .eq('user_id', user.id)
+      .eq('ticker', upperTicker)
+      .maybeSingle();
+
+    isWatchlisted = Boolean(watchlistItem);
   }
 
   // If user tries to access a gated tab via URL, fall back to overview
@@ -229,7 +245,25 @@ export default async function StockPage({
         </div>
       </div>
 
-      <CompanyHeader profile={safeProfile} quote={resolvedQuote} />
+      <CompanyHeader
+        profile={safeProfile}
+        quote={resolvedQuote}
+        action={
+          canManageWatchlist ? (
+            <WatchlistToggleButton
+              ticker={upperTicker}
+              initiallyWatchlisted={isWatchlisted}
+            />
+          ) : (
+            <Link
+              href="/pricing"
+              className="inline-flex h-7 items-center rounded-lg border border-border px-2.5 text-xs font-medium text-foreground hover:bg-surface"
+            >
+              Watchlist: Pro
+            </Link>
+          )
+        }
+      />
 
       <TabNavigation ticker={upperTicker} plan={userPlan}>
         <Suspense fallback={<Skeleton className="h-96 w-full" />}>

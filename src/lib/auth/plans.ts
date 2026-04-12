@@ -15,6 +15,7 @@ const FEATURE_ACCESS: Record<string, Plan> = {
   'financials:unlimited-metrics': 'pro',
   // Future features
   'data:export': 'pro',
+  'watchlist:basic': 'pro',
   'ai:copilot': 'premium',
   'peer:comparison': 'premium',
 };

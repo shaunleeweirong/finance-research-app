@@ -1,13 +1,15 @@
 import Image from 'next/image';
+import type { ReactNode } from 'react';
 import { formatCurrency, formatPercent, formatLargeNumber } from '@/lib/utils/format';
 import type { FMPProfile, FMPQuote } from '@/lib/fmp/types';
 
 interface CompanyHeaderProps {
   profile: FMPProfile;
   quote: FMPQuote;
+  action?: ReactNode;
 }
 
-export function CompanyHeader({ profile, quote }: CompanyHeaderProps) {
+export function CompanyHeader({ profile, quote, action }: CompanyHeaderProps) {
   const isPositive = (quote.change ?? 0) >= 0;
 
   return (
@@ -61,6 +63,8 @@ export function CompanyHeader({ profile, quote }: CompanyHeaderProps) {
             <span>MCap {formatLargeNumber(profile.mktCap)}</span>
           </div>
         </div>
+
+        {action ? <div className="shrink-0">{action}</div> : null}
       </div>
     </div>
   );

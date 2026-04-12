@@ -7,17 +7,43 @@ import Link from 'next/link';
 import { UserMenu } from '@/components/auth/user-menu';
 import { Check, CreditCard, ArrowRight } from 'lucide-react';
 import type { Plan } from '@/lib/auth/plans';
-import type { User } from '@supabase/supabase-js';
-
 const PLAN_DETAILS: Record<Plan, { label: string; description: string }> = {
   free: { label: 'Free', description: 'Basic financial data access' },
   pro: { label: 'Pro', description: 'Advanced data for serious investors' },
   premium: { label: 'Premium', description: 'Full platform access with AI features' },
 };
 
+interface SubscriptionSummary {
+  status: string;
+  cancelAtPeriodEnd: boolean;
+  cancelAt: number | null;
+  currentPeriodEnd: number | null;
+}
+
+function formatBillingDate(unixTimestamp: number | null): string | null {
+  if (!unixTimestamp) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(unixTimestamp * 1000));
+}
+
+function formatSubscriptionStatus(status: string): string {
+  return status
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
 export function BillingContent() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [plan, setPlan] = useState<Plan>('free');
+  const [subscription, setSubscription] = useState<SubscriptionSummary | null>(null);
+  const [subscriptionError, setSubscriptionError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
   const success = searchParams.get('success');
@@ -33,7 +59,19 @@ export function BillingContent() {
           .select('plan')
           .eq('id', user.id)
           .single();
-        setPlan((profile?.plan as Plan) || 'free');
+        const userPlan = (profile?.plan as Plan) || 'free';
+        setPlan(userPlan);
+
+        const response = await fetch('/api/stripe/subscription', { cache: 'no-store' });
+        if (response.ok) {
+          const data = await response.json() as {
+            subscription: SubscriptionSummary | null;
+          };
+          setSubscription(data.subscription);
+          setSubscriptionError(null);
+        } else if (userPlan !== 'free') {
+          setSubscriptionError('Unable to load renewal details right now.');
+        }
       }
       setLoading(false);
     }
@@ -64,6 +102,10 @@ export function BillingContent() {
   }
 
   const details = PLAN_DETAILS[plan];
+  const isCancelling = subscription?.cancelAtPeriodEnd || subscription?.cancelAt != null;
+  const effectiveBillingDate = isCancelling
+    ? formatBillingDate(subscription?.cancelAt ?? subscription?.currentPeriodEnd ?? null)
+    : formatBillingDate(subscription?.currentPeriodEnd ?? null);
 
   async function handleManageSubscription() {
     const res = await fetch('/api/stripe/portal', { method: 'POST' });
@@ -96,6 +138,22 @@ export function BillingContent() {
               <p className="text-sm text-text-secondary mb-1">Current plan</p>
               <h2 className="text-xl font-semibold text-foreground">{details.label}</h2>
               <p className="text-sm text-text-secondary mt-1">{details.description}</p>
+              {plan !== 'free' && effectiveBillingDate ? (
+                <div className="mt-4 rounded-lg border border-border bg-background px-4 py-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-text-muted">
+                    {isCancelling ? 'Access ends on' : 'Renews on'}
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-foreground">{effectiveBillingDate}</p>
+                  {subscription?.status ? (
+                    <p className="mt-1 text-xs text-text-secondary">
+                      Status: {formatSubscriptionStatus(subscription.status)}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+              {plan !== 'free' && subscriptionError ? (
+                <p className="mt-4 text-sm text-text-muted">{subscriptionError}</p>
+              ) : null}
             </div>
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600/10">
               <CreditCard className="h-5 w-5 text-blue-500" />

@@ -1,5 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
-import { createServiceClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe, PRICE_IDS } from '@/lib/stripe';
 
@@ -11,7 +10,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { plan, interval } = await req.json() as {
+  let payload: unknown;
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
+
+  const { plan, interval } = (payload ?? {}) as {
     plan: 'pro' | 'premium';
     interval: 'monthly' | 'annual';
   };
@@ -24,13 +30,26 @@ export async function POST(req: NextRequest) {
 
   // Get or create Stripe customer
   const serviceClient = await createServiceClient();
-  const { data: profile } = await serviceClient
+  const { data: profile, error: profileError } = await serviceClient
     .from('user_profiles')
     .select('stripe_customer_id')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
-  let customerId = profile?.stripe_customer_id;
+  if (profileError) {
+    console.error('Stripe checkout profile lookup failed:', JSON.stringify({
+      userId: user.id,
+      code: profileError.code,
+      message: profileError.message,
+    }));
+    return NextResponse.json({ error: 'Unable to load billing profile' }, { status: 500 });
+  }
+
+  if (!profile) {
+    return NextResponse.json({ error: 'Account profile is not provisioned' }, { status: 409 });
+  }
+
+  let customerId = profile.stripe_customer_id;
 
   if (!customerId) {
     // Create a Stripe customer first (required for Accounts V2)
@@ -41,10 +60,21 @@ export async function POST(req: NextRequest) {
     customerId = customer.id;
 
     // Save customer ID to profile
-    await serviceClient
+    const { error: updateError } = await serviceClient
       .from('user_profiles')
       .update({ stripe_customer_id: customerId, updated_at: new Date().toISOString() })
       .eq('id', user.id);
+
+    if (updateError) {
+      await getStripe().customers.del(customerId);
+      console.error('Stripe customer linkage save failed:', JSON.stringify({
+        userId: user.id,
+        customerId,
+        code: updateError.code,
+        message: updateError.message,
+      }));
+      return NextResponse.json({ error: 'Unable to prepare checkout session' }, { status: 500 });
+    }
   }
 
   try {

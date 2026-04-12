@@ -1,6 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe, getPlanFromPriceId } from '@/lib/stripe';
 import { createServiceClient } from '@/lib/supabase/server';
+import Stripe from 'stripe';
+
+function getEntitledPlan(subscription: Stripe.Subscription): 'free' | 'pro' | 'premium' {
+  const priceId = subscription.items.data[0]?.price.id;
+  const paidPlan = getPlanFromPriceId(priceId);
+
+  switch (subscription.status) {
+    case 'active':
+    case 'trialing':
+    case 'past_due':
+      return paidPlan;
+    case 'incomplete':
+    case 'incomplete_expired':
+    case 'unpaid':
+    case 'paused':
+    case 'canceled':
+    default:
+      return 'free';
+  }
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -27,10 +47,9 @@ export async function POST(req: NextRequest) {
       if (!userId || !session.subscription) break;
 
       const subscription = await getStripe().subscriptions.retrieve(session.subscription as string);
-      const priceId = subscription.items.data[0]?.price.id;
-      const plan = getPlanFromPriceId(priceId);
+      const plan = getEntitledPlan(subscription);
 
-      await supabase
+      const { error } = await supabase
         .from('user_profiles')
         .update({
           plan,
@@ -39,30 +58,57 @@ export async function POST(req: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq('id', userId);
+
+      if (error) {
+        console.error('Webhook checkout.session.completed sync failed:', JSON.stringify({
+          userId,
+          code: error.code,
+          message: error.message,
+        }));
+        return NextResponse.json({ error: 'Profile sync failed' }, { status: 500 });
+      }
       break;
     }
 
     case 'customer.subscription.updated': {
       const subscription = event.data.object;
-      const priceId = subscription.items.data[0]?.price.id;
-      const plan = getPlanFromPriceId(priceId);
+      const plan = getEntitledPlan(subscription);
       const customerId = subscription.customer as string;
 
-      const { data: profiles } = await supabase
+      const { data: profiles, error: lookupError } = await supabase
         .from('user_profiles')
         .select('id')
         .eq('stripe_customer_id', customerId)
         .limit(1);
 
-      if (profiles && profiles.length > 0) {
-        await supabase
+      if (lookupError) {
+        console.error('Webhook customer.subscription.updated lookup failed:', JSON.stringify({
+          customerId,
+          code: lookupError.code,
+          message: lookupError.message,
+        }));
+        return NextResponse.json({ error: 'Profile lookup failed' }, { status: 500 });
+      }
+
+      if (profiles?.[0]) {
+        const { error } = await supabase
           .from('user_profiles')
           .update({
-            plan: subscription.status === 'active' ? plan : 'free',
+            plan,
             stripe_subscription_id: subscription.id,
             updated_at: new Date().toISOString(),
           })
           .eq('id', profiles[0].id);
+
+        if (error) {
+          console.error('Webhook customer.subscription.updated sync failed:', JSON.stringify({
+            customerId,
+            profileId: profiles[0].id,
+            code: error.code,
+            message: error.message,
+          }));
+          return NextResponse.json({ error: 'Profile sync failed' }, { status: 500 });
+        }
       }
       break;
     }
@@ -71,7 +117,7 @@ export async function POST(req: NextRequest) {
       const subscription = event.data.object;
       const customerId = subscription.customer as string;
 
-      await supabase
+      const { error } = await supabase
         .from('user_profiles')
         .update({
           plan: 'free',
@@ -79,6 +125,15 @@ export async function POST(req: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq('stripe_customer_id', customerId);
+
+      if (error) {
+        console.error('Webhook customer.subscription.deleted sync failed:', JSON.stringify({
+          customerId,
+          code: error.code,
+          message: error.message,
+        }));
+        return NextResponse.json({ error: 'Profile sync failed' }, { status: 500 });
+      }
       break;
     }
   }
