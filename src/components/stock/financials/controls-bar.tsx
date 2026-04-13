@@ -1,6 +1,6 @@
 'use client';
 
-import { Lock } from 'lucide-react';
+import { Download, Lock } from 'lucide-react';
 import type { StatementType } from '@/config/financial-line-items';
 import { STATEMENT_CONFIGS } from '@/config/financial-line-items';
 import type { DataUnit } from '@/lib/utils/format';
@@ -23,6 +23,7 @@ interface ControlsBarProps {
   plan?: Plan;
   showChange?: boolean;
   onShowChangeToggle?: () => void;
+  onExport?: () => void;
 }
 
 const PERIODS = [
@@ -47,6 +48,7 @@ export function ControlsBar({
   plan = 'free',
   showChange = false,
   onShowChangeToggle,
+  onExport,
 }: ControlsBarProps) {
   const depthSuffix = activePeriod === 'annual' ? 'Y' : 'Q';
 
@@ -158,6 +160,35 @@ export function ControlsBar({
                 </button>
               );
             })}
+          </div>
+        </div>
+
+        {/* Export */}
+        <div className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wider text-text-muted font-medium">
+            Export
+          </span>
+          <div className="flex rounded-lg bg-background p-0.5">
+            {canAccess(plan, 'data:export') ? (
+              <button
+                onClick={onExport}
+                disabled={isLoading}
+                title="Download CSV"
+                className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:text-foreground transition-colors disabled:opacity-50"
+              >
+                <Download className="h-3.5 w-3.5" />
+                CSV
+              </button>
+            ) : (
+              <span
+                title="Pro feature — export financial data as CSV"
+                className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium text-text-muted opacity-50 cursor-not-allowed"
+              >
+                <Download className="h-3.5 w-3.5" />
+                CSV
+                <Lock className="h-2.5 w-2.5" />
+              </span>
+            )}
           </div>
         </div>
 

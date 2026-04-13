@@ -8,6 +8,7 @@ const FEATURE_ACCESS: Record<string, Plan> = {
   'tab:filings': 'free',
   'tab:estimates': 'pro',
   'tab:ownership': 'pro',
+  'tab:valuation': 'pro',
   // Financials sub-features
   'financials:segments': 'pro',
   'financials:depth-20': 'pro',

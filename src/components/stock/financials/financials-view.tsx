@@ -17,6 +17,7 @@ import type {
 import { detectBestUnit, type DataUnit } from '@/lib/utils/format';
 import type { Plan } from '@/lib/auth/plans';
 import { canAccess, FREE_MAX_CHART_METRICS } from '@/lib/auth/plans';
+import { financialsToCSV, downloadCSV } from '@/lib/utils/export';
 
 interface FinancialsViewProps {
   ticker: string;
@@ -210,6 +211,13 @@ export function FinancialsView({ ticker, initialData, plan = 'free' }: Financial
         plan={plan}
         showChange={showChange}
         onShowChangeToggle={() => setShowChange((prev) => !prev)}
+        onExport={() => {
+          const csv = financialsToCSV(currentData, currentConfig.items);
+          if (csv) {
+            const statement = STATEMENT_CONFIGS[activeStatement].label.replace(/\s+/g, '-').toLowerCase();
+            downloadCSV(csv, `${ticker}-${statement}-${activePeriod}.csv`);
+          }
+        }}
       />
 
       {/* Content: segments view OR data table */}
