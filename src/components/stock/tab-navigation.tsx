@@ -13,6 +13,7 @@ const TABS = [
   { value: 'estimates', label: 'Estimates' },
   { value: 'ownership', label: 'Ownership' },
   { value: 'filings', label: 'Filings' },
+  { value: 'valuation', label: 'Valuation' },
 ] as const;
 
 export function TabNavigation({

@@ -31,6 +31,7 @@ const TIERS = [
       { name: 'Extended history (20Y/40Y)', included: false },
       { name: 'Unlimited chart metrics', included: false },
       { name: 'Data export (CSV)', included: false },
+      { name: 'DCF & EPS Valuation models', included: false },
     ],
   },
   {
@@ -50,6 +51,7 @@ const TIERS = [
       { name: 'Ownership tab', included: true },
       { name: 'Extended history (20Y/40Y)', included: true },
       { name: 'Data export (CSV)', included: true },
+      { name: 'DCF & EPS Valuation models', included: true },
       { name: 'AI Copilot', included: false },
       { name: 'Peer comparison', included: false },
     ],

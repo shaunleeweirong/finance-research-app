@@ -34,6 +34,7 @@ import { FilingsTab } from '@/components/stock/filings/filings-tab';
 import { EstimatesTab } from '@/components/stock/estimates/estimates-tab';
 import { OwnershipTab } from '@/components/stock/ownership/ownership-tab';
 import { UpgradePrompt } from '@/components/paywall/upgrade-prompt';
+import { ValuationView } from '@/components/stock/dcf/valuation-view';
 import { SearchBar } from '@/components/search/search-bar';
 import { UserMenu } from '@/components/auth/user-menu';
 import { WatchlistToggleButton } from '@/components/watchlist/watchlist-toggle-button';
@@ -225,6 +226,18 @@ export default async function StockPage({
         return <OwnershipTab holders={holdersData} insiderTrades={insiderData} />;
       case 'filings':
         return <FilingsTab filings={filingsData} />;
+      case 'valuation':
+        if (!canAccess(userPlan, 'tab:valuation')) {
+          return <UpgradePrompt feature="tab:valuation" title="Valuation Models" description="Build DCF and EPS valuation models with adjustable growth rates, projection periods, and discount rates to find intrinsic value." />;
+        }
+        return (
+          <ValuationView
+            profile={safeProfile}
+            quote={resolvedQuote}
+            cashflow={cashflowData ?? []}
+            income={incomeData ?? []}
+          />
+        );
       default:
         return (
           <div className="rounded-lg border border-border bg-surface p-12 text-center text-text-muted">
