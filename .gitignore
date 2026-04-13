@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# OMG orchestration state
+.omc/
+
+# Playwright MCP
+.playwright-mcp/
