@@ -13,6 +13,7 @@ interface DataTableProps {
   activeUnit: DataUnit;
   onMetricToggle: (key: string) => void;
   showChange?: boolean;
+  highlightTerm?: string;
 }
 
 function formatValue(value: unknown, format: LineItemConfig['format'], unit: DataUnit): string {
@@ -64,7 +65,20 @@ function getYoYColor(current: unknown, previous: unknown): string {
   return 'text-text-muted';
 }
 
-export function DataTable({ data, lineItems, selectedMetrics, activeUnit, onMetricToggle, showChange = false }: DataTableProps) {
+function HighlightedLabel({ text, term }: { text: string; term: string }) {
+  if (!term) return <>{text}</>;
+  const idx = text.toLowerCase().indexOf(term);
+  if (idx === -1) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="bg-yellow-400/30 text-foreground rounded-sm px-px">{text.slice(idx, idx + term.length)}</mark>
+      {text.slice(idx + term.length)}
+    </>
+  );
+}
+
+export function DataTable({ data, lineItems, selectedMetrics, activeUnit, onMetricToggle, showChange = false, highlightTerm = '' }: DataTableProps) {
   if (data.length === 0) {
     return (
       <div className="flex h-40 items-center justify-center text-text-muted">
@@ -116,7 +130,7 @@ export function DataTable({ data, lineItems, selectedMetrics, activeUnit, onMetr
                       <span
                         className={`text-sm ${item.indent ? 'pl-4 text-text-secondary' : 'font-medium text-foreground'}`}
                       >
-                        {item.label}
+                        <HighlightedLabel text={item.label} term={highlightTerm} />
                       </span>
                     </div>
                   </td>

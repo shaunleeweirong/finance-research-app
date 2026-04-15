@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { ChartPanel } from './chart-panel';
 import { ControlsBar, type DepthLimit } from './controls-bar';
+import { MetricSearchBar } from './metric-search-bar';
 import { DataTable } from './data-table';
 import { SegmentsView } from './segments-view';
 import { STATEMENT_CONFIGS, type StatementType } from '@/config/financial-line-items';
@@ -46,6 +47,8 @@ export function FinancialsView({ ticker, initialData, plan = 'free' }: Financial
   const [selectedMetrics, setSelectedMetrics] = useState<Map<string, { chartType: 'bar' | 'line' }>>(new Map());
   const [isLoading, setIsLoading] = useState(false);
   const [showChange, setShowChange] = useState(false);
+  const [metricFilter, setMetricFilter] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const unlimitedMetrics = canAccess(plan, 'financials:unlimited-metrics');
 
@@ -173,6 +176,51 @@ export function FinancialsView({ ticker, initialData, plan = 'free' }: Financial
   const selectedSet = useMemo(() => new Set(selectedMetrics.keys()), [selectedMetrics]);
   const isSegmentsTab = activeStatement === 'segments';
 
+  // Metric search filtering
+  const normalizedFilter = metricFilter.trim().toLowerCase();
+  const isSearchActive = normalizedFilter.length > 0;
+
+  // When searching: collect matches from ALL statement tabs
+  const SEARCHABLE_TABS: StatementType[] = ['income', 'balance', 'cashflow', 'ratios'];
+
+  const allTabMatches = useMemo(() => {
+    if (!normalizedFilter) return [];
+    return SEARCHABLE_TABS.map((key) => {
+      const config = STATEMENT_CONFIGS[key];
+      const matches = config.items.filter((item) =>
+        item.label.toLowerCase().includes(normalizedFilter)
+      );
+      return { key, label: config.label, items: matches };
+    }).filter((group) => group.items.length > 0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [normalizedFilter]);
+
+  const totalMatchCount = useMemo(
+    () => allTabMatches.reduce((sum, g) => sum + g.items.length, 0),
+    [allTabMatches]
+  );
+
+  const totalMetricCount = useMemo(
+    () => SEARCHABLE_TABS.reduce((sum, key) => sum + STATEMENT_CONFIGS[key].items.length, 0),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  // ⌘F / Ctrl+F keyboard shortcut to focus the metric search
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+        // Only intercept if we're on the financials tab area
+        if (searchInputRef.current) {
+          e.preventDefault();
+          searchInputRef.current.focus();
+        }
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <div className="space-y-4">
       {/* Metric limit notice for free users */}
@@ -220,13 +268,72 @@ export function FinancialsView({ ticker, initialData, plan = 'free' }: Financial
         }}
       />
 
-      {/* Content: segments view OR data table */}
+      {/* Metric search bar — shown for all non-segment tabs */}
+      {!isSegmentsTab && (
+        <MetricSearchBar
+          value={metricFilter}
+          onChange={setMetricFilter}
+          inputRef={searchInputRef}
+          totalCount={totalMetricCount}
+          filteredCount={totalMatchCount}
+          isSearchActive={isSearchActive}
+        />
+      )}
+
+      {/* Content: segments view OR search results OR single-tab data table */}
       {isSegmentsTab ? (
         <SegmentsView
           productData={initialData.productSegments}
           geographicData={initialData.geographicSegments}
           activeUnit={activeUnit}
         />
+      ) : isSearchActive ? (
+        // Cross-tab search results
+        allTabMatches.length === 0 ? (
+          <div className="flex h-40 items-center justify-center text-text-muted">
+            No metrics match &ldquo;{metricFilter.trim()}&rdquo;
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {allTabMatches.map((group) => {
+              const groupCacheKey = `${group.key}-${activePeriod}-${activeLimit}`;
+              const groupData = dataCache[groupCacheKey] || [];
+              return (
+                <div key={group.key}>
+                  <div className="mb-2 flex items-center gap-2">
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+                      {group.label}
+                    </h4>
+                    <button
+                      onClick={() => {
+                        setMetricFilter('');
+                        handleStatementChange(group.key);
+                      }}
+                      className="text-[10px] text-primary hover:underline"
+                    >
+                      View full →
+                    </button>
+                  </div>
+                  {groupData.length > 0 ? (
+                    <DataTable
+                      data={groupData}
+                      lineItems={group.items}
+                      selectedMetrics={selectedSet}
+                      activeUnit={activeUnit}
+                      onMetricToggle={handleMetricToggle}
+                      showChange={showChange}
+                      highlightTerm={normalizedFilter}
+                    />
+                  ) : (
+                    <div className="flex h-20 items-center justify-center rounded-lg border border-border text-xs text-text-muted">
+                      Switch to {group.label} to load data
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )
       ) : isLoading ? (
         <div className="h-96 animate-pulse rounded-lg bg-surface" />
       ) : (
