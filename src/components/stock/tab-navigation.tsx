@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Plan } from '@/lib/auth/plans';
@@ -20,27 +19,18 @@ export function TabNavigation({
   children,
   ticker,
   plan = 'free',
+  activeTab = 'overview',
+  onTabChange,
 }: {
   children: React.ReactNode;
   ticker: string;
   plan?: Plan;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'overview';
-
   function handleTabChange(value: string) {
-    // Prevent switching to locked tabs
     if (!canAccess(plan, `tab:${value}`)) return;
-
-    const params = new URLSearchParams(searchParams.toString());
-    if (value === 'overview') {
-      params.delete('tab');
-    } else {
-      params.set('tab', value);
-    }
-    const query = params.toString();
-    router.push(`/stock/${ticker}${query ? `?${query}` : ''}`, { scroll: false });
+    onTabChange?.(value);
   }
 
   return (
