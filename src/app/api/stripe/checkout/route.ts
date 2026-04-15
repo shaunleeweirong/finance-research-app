@@ -98,11 +98,7 @@ export async function POST(req: NextRequest) {
       statusCode: error.statusCode,
     }));
     return NextResponse.json(
-      {
-        error: error.message || 'Failed to create checkout',
-        type: error.type,
-        code: error.code,
-      },
+      { error: 'Failed to create checkout session' },
       { status: 500 },
     );
   }
