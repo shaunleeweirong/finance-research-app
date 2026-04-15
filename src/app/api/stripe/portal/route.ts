@@ -3,6 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
 
 export async function POST(req: NextRequest) {
+  // CSRF protection: validate Origin matches the server's own origin
+  const origin = req.headers.get('origin');
+  if (origin && origin !== req.nextUrl.origin) {
+    return NextResponse.json({ error: 'Invalid origin' }, { status: 403 });
+  }
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 

@@ -3,6 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getStripe, PRICE_IDS } from '@/lib/stripe';
 
 export async function POST(req: NextRequest) {
+  // CSRF protection: validate Origin matches the server's own origin
+  const origin = req.headers.get('origin');
+  if (origin && origin !== req.nextUrl.origin) {
+    return NextResponse.json({ error: 'Invalid origin' }, { status: 403 });
+  }
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -52,9 +58,12 @@ export async function POST(req: NextRequest) {
   let customerId = profile.stripe_customer_id;
 
   if (!customerId) {
+    if (!user.email) {
+      return NextResponse.json({ error: 'Email is required for billing' }, { status: 400 });
+    }
     // Create a Stripe customer first (required for Accounts V2)
     const customer = await getStripe().customers.create({
-      email: user.email!,
+      email: user.email,
       metadata: { supabaseUserId: user.id },
     });
     customerId = customer.id;

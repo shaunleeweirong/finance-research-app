@@ -191,7 +191,7 @@ export default function PricingPage() {
                 <ul className="space-y-3 flex-1">
                   {tier.features.map((feature) => (
                     <li key={feature.name} className="flex items-center gap-2.5 text-sm">
-                      {feature.included ? <Check className="h-4 w-4 flex-shrink-0 text-green-500" /> : <X className="h-4 w-4 flex-shrink-0 text-text-muted" />}
+                      {feature.included ? <Check className="h-4 w-4 shrink-0 text-green-500" /> : <X className="h-4 w-4 shrink-0 text-text-muted" />}
                       <span className={feature.included ? 'text-text-secondary' : 'text-text-muted'}>{feature.name}</span>
                     </li>
                   ))}
