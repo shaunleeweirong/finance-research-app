@@ -5,6 +5,7 @@ import { PriceChart } from '@/components/stock/overview/price-chart';
 import { KeyMetrics } from '@/components/stock/overview/key-metrics';
 import { CompanyStatistics } from '@/components/stock/overview/company-statistics';
 import { CompanyProfile } from '@/components/stock/overview/company-profile';
+import { WhatsHappening } from '@/components/stock/overview/whats-happening';
 import { FinancialsView } from '@/components/stock/financials/financials-view';
 import { NewsTab } from '@/components/stock/news/news-tab';
 import { FilingsTab } from '@/components/stock/filings/filings-tab';
@@ -185,6 +186,7 @@ export function StockContent({
         return (
           <div className="space-y-6">
             <PriceChart ticker={ticker} initialData={historicalData} />
+            <WhatsHappening ticker={ticker} />
             <KeyMetrics
               quote={quote}
               keyMetrics={keyMetricsData?.[0] ?? null}
