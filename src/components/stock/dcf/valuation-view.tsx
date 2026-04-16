@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { DCFCalculator } from './dcf-calculator';
 import { EPSCalculator } from './eps-calculator';
+import { PSCalculator } from './ps-calculator';
 import type { FMPProfile, FMPQuote, FMPCashFlowStatement, FMPIncomeStatement } from '@/lib/fmp/types';
 
-export type ValuationModel = 'dcf' | 'eps';
+export type ValuationModel = 'dcf' | 'eps' | 'ps';
 
 interface ValuationViewProps {
   profile: FMPProfile;
@@ -43,14 +44,26 @@ export function ValuationView({ profile, quote, cashflow, income }: ValuationVie
           >
             EPS (Earnings)
           </button>
+          <button
+            onClick={() => setActiveModel('ps')}
+            className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+              activeModel === 'ps'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-text-secondary hover:text-foreground'
+            }`}
+          >
+            P/S (Revenue)
+          </button>
         </div>
       </div>
 
       {/* Active Model */}
       {activeModel === 'dcf' ? (
         <DCFCalculator profile={profile} quote={quote} cashflow={cashflow} />
-      ) : (
+      ) : activeModel === 'eps' ? (
         <EPSCalculator profile={profile} quote={quote} income={income} />
+      ) : (
+        <PSCalculator profile={profile} quote={quote} income={income} />
       )}
     </div>
   );
