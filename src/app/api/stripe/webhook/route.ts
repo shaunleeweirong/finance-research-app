@@ -136,6 +136,39 @@ export async function POST(req: NextRequest) {
       }
       break;
     }
+
+    case 'invoice.payment_failed': {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = invoice.customer as string;
+
+      // Log for monitoring — in production, integrate email notifications
+      console.error('Payment failed for customer:', JSON.stringify({
+        customerId,
+        invoiceId: invoice.id,
+        attemptCount: invoice.attempt_count,
+        amountDue: invoice.amount_due,
+      }));
+
+      // After 3 failed attempts, downgrade to free
+      if (invoice.attempt_count >= 3) {
+        const { error } = await supabase
+          .from('user_profiles')
+          .update({
+            plan: 'free',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('stripe_customer_id', customerId);
+
+        if (error) {
+          console.error('Webhook invoice.payment_failed downgrade failed:', JSON.stringify({
+            customerId,
+            code: error.code,
+            message: error.message,
+          }));
+        }
+      }
+      break;
+    }
   }
 
   return NextResponse.json({ received: true });

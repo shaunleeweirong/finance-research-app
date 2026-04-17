@@ -57,6 +57,21 @@ export async function POST(req: NextRequest) {
 
   let customerId = profile.stripe_customer_id;
 
+  // Prevent duplicate subscriptions
+  if (customerId) {
+    const existingSubs = await getStripe().subscriptions.list({
+      customer: customerId,
+      status: 'active',
+      limit: 1,
+    });
+    if (existingSubs.data.length > 0) {
+      return NextResponse.json(
+        { error: 'You already have an active subscription. Manage it from your billing page.' },
+        { status: 409 },
+      );
+    }
+  }
+
   if (!customerId) {
     if (!user.email) {
       return NextResponse.json({ error: 'Email is required for billing' }, { status: 400 });

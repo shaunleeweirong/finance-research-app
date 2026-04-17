@@ -47,10 +47,10 @@ export function BillingContent() {
   const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
   const success = searchParams.get('success');
-  const supabase = createClient();
 
   useEffect(() => {
     async function load() {
+      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       if (user) {
@@ -76,7 +76,7 @@ export function BillingContent() {
       setLoading(false);
     }
     load();
-  }, [supabase]);
+  }, []);
 
   if (loading) {
     return (

@@ -96,7 +96,8 @@ export async function GET(
   }
 
   const forceRefresh = new URL(_request.url).searchParams.get('refresh') === 'true';
-  const companyName = new URL(_request.url).searchParams.get('name') ?? ticker;
+  const rawName = new URL(_request.url).searchParams.get('name') ?? ticker;
+  const companyName = rawName.replace(/[^a-zA-Z0-9\s.,&'\-()]/g, '').slice(0, 100);
 
   try {
     const supabase = await createServiceClient();

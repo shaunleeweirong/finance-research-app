@@ -6,7 +6,7 @@ import { UpgradePrompt } from '@/components/paywall/upgrade-prompt';
 import { SearchBar } from '@/components/search/search-bar';
 import { UserMenu } from '@/components/auth/user-menu';
 import { WatchlistTable, type WatchlistRow } from '@/components/watchlist/watchlist-table';
-import { getCompanyProfile, getQuote } from '@/lib/fmp';
+import { getBatchProfiles, getBatchQuotes } from '@/lib/fmp';
 
 interface WatchlistRecord {
   ticker: string;
@@ -68,23 +68,28 @@ export default async function WatchlistPage() {
   }
 
   const records: WatchlistRecord[] = data ?? [];
+  const tickers = records.map((r) => r.ticker);
 
-  const rows = await Promise.all(
-    records.map(async (record): Promise<WatchlistRow> => {
-      const [profile, quote] = await Promise.all([
-        getCompanyProfile(record.ticker),
-        getQuote(record.ticker),
-      ]);
+  // Batch fetch — 2 API calls total instead of 2 per ticker
+  const [profiles, quotes] = await Promise.all([
+    getBatchProfiles(tickers),
+    getBatchQuotes(tickers),
+  ]);
 
-      return {
-        ticker: record.ticker,
-        companyName: profile?.companyName ?? quote?.name ?? record.ticker,
-        price: quote?.price ?? profile?.price ?? null,
-        changePercent: quote?.changesPercentage ?? null,
-        createdAt: record.created_at,
-      };
-    })
-  );
+  const profileMap = new Map(profiles.map((p) => [p.symbol, p]));
+  const quoteMap = new Map(quotes.map((q) => [q.symbol, q]));
+
+  const rows: WatchlistRow[] = records.map((record) => {
+    const profile = profileMap.get(record.ticker);
+    const quote = quoteMap.get(record.ticker);
+    return {
+      ticker: record.ticker,
+      companyName: profile?.companyName ?? quote?.name ?? record.ticker,
+      price: quote?.price ?? profile?.price ?? null,
+      changePercent: quote?.changesPercentage ?? null,
+      createdAt: record.created_at,
+    };
+  });
 
   return (
     <main className="min-h-screen px-4 py-6">
