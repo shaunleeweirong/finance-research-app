@@ -162,16 +162,16 @@ export async function GET(
 
 Use this EXACT format. Only include a section if you have concrete, sourced information. If a section would require speculation, omit it entirely by writing NONE after the header.
 
-TITLE: [Short, compelling headline — max 12 words]
+TITLE: [Short, compelling headline about the business narrative — max 12 words]
 
 BULL CASE:
-- [Why optimists are buying — what is the bull case?]
-- [Another bullish factor]
+- [Business reason why investors are bullish — e.g. revenue growth, new product traction, expanding TAM, margin improvement, regulatory tailwind]
+- [Another fundamental bullish factor]
 - [Third bullish point if available]
 
 BEAR CASE:
-- [Why skeptics are cautious — what is the bear case?]
-- [Another bearish factor]
+- [Business reason why investors are cautious — e.g. slowing growth, margin compression, competitive threat, regulatory risk, valuation concern]
+- [Another fundamental bearish factor]
 - [Third bearish point if available]
 
 KEY DEVELOPMENTS:
@@ -186,12 +186,13 @@ COMPETITIVE LANDSCAPE:
 - [How peers are performing, market share shift, or emerging competitive threat]
 
 WHAT TO WATCH:
-- [Upcoming earnings date with consensus EPS estimate]
-- [Specific catalyst event with date]
-- [Key metric or threshold to monitor]
+- [Upcoming earnings date, product launch, or regulatory decision with date]
+- [Key business metric or threshold to monitor]
 
 Rules:
-- Each bullet must contain a specific fact, number, or date — no vague statements
+- Focus on business fundamentals, catalysts, and investment thesis — NOT daily price movements
+- Do NOT list stock price changes, daily returns, or trading volume as bullet points
+- A single line mentioning overall stock performance in the title is fine, but the sections should explain the WHY, not the WHAT
 - Never fabricate quotes, analyst names, or price targets you cannot verify
 - If you have no sourced information for a section, write NONE (do not speculate)
 - Remove inline citation markers like [1][2] from the text
@@ -210,7 +211,7 @@ Rules:
           {
             role: 'system',
             content:
-              'You are a senior equity research analyst writing concise stock briefs. Every claim must be backed by data from your search results. Omit sections where you lack concrete information rather than speculating. Never include inline citation markers like [1] or [2] in your output text.',
+              'You are a senior equity research analyst writing concise stock briefs for institutional investors. Focus on business fundamentals, growth drivers, risks, and catalysts — not daily stock price movements or trading volume. Every claim must be backed by data from your search results. Omit sections where you lack concrete information rather than speculating. Never include inline citation markers like [1] or [2] in your output text.',
           },
           { role: 'user', content: prompt },
         ],
