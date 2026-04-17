@@ -153,6 +153,12 @@ export function WhatsHappening({ ticker }: { ticker: string }) {
             <Section icon={Eye} label="What to Watch" items={data.whatToWatch} color="text-amber-500" />
           </div>
 
+          {!data.bullCase.length && !data.bearCase.length && !data.keyDevelopments.length && (
+            <p className="mt-2 text-sm text-text-muted/60">
+              Not enough information available to generate a research brief for this stock. Try again later.
+            </p>
+          )}
+
           {/* Citations */}
           {data.citations.length > 0 && (
             <div className="mt-4 border-t border-border pt-3">

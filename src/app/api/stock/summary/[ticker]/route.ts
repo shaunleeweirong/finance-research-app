@@ -75,25 +75,8 @@ function parseStructuredSummary(raw: string, dateRange: string): ParsedSummary {
   const competitiveLandscape = parseSection(raw, 'COMPETITIVE LANDSCAPE');
   const whatToWatch = parseSection(raw, 'WHAT TO WATCH');
 
-  // Fallback: if no sections parsed, extract bullet lines from raw
-  if (!bullCase.length && !bearCase.length && !keyDevelopments.length) {
-    const lines = raw
-      .split('\n')
-      .map((l) => l.replace(/^[-•*]\s*/, '').replace(/\*\*/g, '').replace(/\[\d+\]/g, '').trim())
-      .filter((l) => l.length > 20);
-    return {
-      title: title || 'Stock Summary',
-      dateRange,
-      bullCase: lines.slice(0, 2),
-      bearCase: lines.slice(2, 4),
-      keyDevelopments: lines.slice(4, 6),
-      managementSignals: [],
-      competitiveLandscape: [],
-      whatToWatch: [],
-    };
-  }
-
-  return { title, dateRange, bullCase, bearCase, keyDevelopments, managementSignals, competitiveLandscape, whatToWatch };
+  // If no sections parsed at all, return empty — the component handles graceful degradation
+  return { title: title || 'Stock Summary', dateRange, bullCase, bearCase, keyDevelopments, managementSignals, competitiveLandscape, whatToWatch };
 }
 
 export async function GET(
