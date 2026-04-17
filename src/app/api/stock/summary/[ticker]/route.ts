@@ -148,18 +148,20 @@ export async function GET(
 
     const prompt = `Write a structured stock research brief for ${companyName} (ticker: ${ticker}) covering ${dateRange}.
 
+Search for recent analyst opinions, investment theses, news analysis, and commentary about this company — not just financial data or price history.
+
 Use this EXACT format. Only include a section if you have concrete, sourced information. If a section would require speculation, omit it entirely by writing NONE after the header.
 
 TITLE: [Short, compelling headline about the business narrative — max 12 words]
 
 BULL CASE:
-- [Business reason why investors are bullish — e.g. revenue growth, new product traction, expanding TAM, margin improvement, regulatory tailwind]
-- [Another fundamental bullish factor]
+- [Explain WHY investors are optimistic — the narrative, thesis, or trend driving conviction, not just a number]
+- [Another reason for optimism with context on why it matters]
 - [Third bullish point if available]
 
 BEAR CASE:
-- [Business reason why investors are cautious — e.g. slowing growth, margin compression, competitive threat, regulatory risk, valuation concern]
-- [Another fundamental bearish factor]
+- [Explain WHY investors are worried — the concern, risk, or trend causing caution, not just a metric]
+- [Another reason for caution with context on why it matters]
 - [Third bearish point if available]
 
 KEY DEVELOPMENTS:
@@ -177,10 +179,20 @@ WHAT TO WATCH:
 - [Upcoming earnings date, product launch, or regulatory decision with date]
 - [Key business metric or threshold to monitor]
 
+IMPORTANT — write every bullet as a NARRATIVE explaining WHY something matters, not as a data point.
+
+BAD example (do NOT write like this):
+- "Q1 revenue was $173B, up 14% YoY"
+- "EPS of $1.95 missed estimates of $1.98"
+- "Operating income projected at $16.5-21.5 billion"
+
+GOOD example (write like this):
+- "Amazon's custom AI chip business is rapidly gaining enterprise adoption, potentially reducing dependence on Nvidia and improving cloud margins long-term"
+- "Investors worry that rising capex on AI infrastructure could compress margins before revenue catches up, echoing concerns from prior AWS buildout cycles"
+
 Rules:
-- Focus on business fundamentals, catalysts, and investment thesis — NOT daily price movements
-- Do NOT list stock price changes, daily returns, or trading volume as bullet points
-- A single line mentioning overall stock performance in the title is fine, but the sections should explain the WHY, not the WHAT
+- Every bullet must explain a perspective, thesis, or narrative — not just state a number
+- Do NOT simply restate financial metrics — explain why they matter and what they signal
 - Never fabricate quotes, analyst names, or price targets you cannot verify
 - If you have no sourced information for a section, write NONE (do not speculate)
 - Remove inline citation markers like [1][2] from the text
@@ -199,11 +211,11 @@ Rules:
           {
             role: 'system',
             content:
-              'You are a senior equity research analyst writing concise stock briefs for institutional investors. Focus on business fundamentals, growth drivers, risks, and catalysts — not daily stock price movements or trading volume. Every claim must be backed by data from your search results. Omit sections where you lack concrete information rather than speculating. Never include inline citation markers like [1] or [2] in your output text.',
+              'You are a senior equity research analyst writing investment briefs. Your job is to explain the narrative and thesis around a stock — why investors are bullish or bearish, what trends matter, and what to watch. Do NOT just restate financial numbers. Explain what they mean and why they matter. Search for analyst commentary, opinion pieces, and investment analysis — not just earnings data. Omit sections where you lack concrete information. Never include inline citation markers like [1] or [2].',
           },
           { role: 'user', content: prompt },
         ],
-        max_tokens: 800,
+        max_tokens: 1000,
         temperature: 0.1,
       }),
     });
