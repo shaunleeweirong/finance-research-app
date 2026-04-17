@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import {
   Sparkles,
-  RefreshCw,
   ExternalLink,
   TrendingUp,
   TrendingDown,
@@ -76,12 +75,11 @@ export function WhatsHappening({ ticker, companyName }: { ticker: string; compan
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  async function fetchSummary(refresh = false) {
+  async function fetchSummary() {
     setLoading(true);
     setError(false);
     try {
       const params = new URLSearchParams();
-      if (refresh) params.set('refresh', 'true');
       params.set('name', companyName);
       const url = `/api/stock/summary/${encodeURIComponent(ticker)}?${params.toString()}`;
       const res = await fetch(url);
@@ -110,15 +108,6 @@ export function WhatsHappening({ ticker, companyName }: { ticker: string; compan
           <Sparkles className="h-4 w-4 text-amber-500" />
           <span className="text-sm font-semibold text-text">What&apos;s Happening</span>
         </div>
-        {!loading && data && (
-          <button
-            onClick={() => fetchSummary(true)}
-            className="inline-flex items-center gap-1 text-xs text-text-muted/60 transition-colors hover:text-primary"
-          >
-            <RefreshCw className="h-3 w-3" />
-            Refresh
-          </button>
-        )}
       </div>
 
       {loading ? (
