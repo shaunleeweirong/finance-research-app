@@ -165,13 +165,13 @@ Use this EXACT format. Only include a section if you have concrete, sourced info
 TITLE: [Short, compelling headline — max 12 words]
 
 BULL CASE:
-- [Why optimists are buying — specific growth driver, catalyst, or positive data point]
-- [Another concrete bullish factor with numbers]
+- [Why optimists are buying — what is the bull case?]
+- [Another bullish factor]
 - [Third bullish point if available]
 
 BEAR CASE:
-- [Why skeptics are cautious — specific risk, overvaluation concern, or negative data]
-- [Another concrete bearish factor with numbers]
+- [Why skeptics are cautious — what is the bear case?]
+- [Another bearish factor]
 - [Third bearish point if available]
 
 KEY DEVELOPMENTS:
