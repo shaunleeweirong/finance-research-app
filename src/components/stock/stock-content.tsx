@@ -186,15 +186,7 @@ export function StockContent({
         return (
           <div className="space-y-6">
             <PriceChart ticker={ticker} initialData={historicalData} />
-            {canAccess(plan, 'ai:copilot') ? (
-              <WhatsHappening ticker={ticker} companyName={profile.companyName} />
-            ) : (
-              <UpgradePrompt
-                feature="ai:copilot"
-                title="AI Stock Brief"
-                description="Unlock AI-powered research briefs with bull/bear analysis, key developments, and what to watch — powered by real-time web search."
-              />
-            )}
+            <WhatsHappening ticker={ticker} companyName={profile.companyName} />
             <KeyMetrics
               quote={quote}
               keyMetrics={keyMetricsData?.[0] ?? null}
