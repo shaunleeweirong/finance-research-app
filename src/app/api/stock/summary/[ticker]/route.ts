@@ -96,6 +96,7 @@ export async function GET(
   }
 
   const forceRefresh = new URL(_request.url).searchParams.get('refresh') === 'true';
+  const companyName = new URL(_request.url).searchParams.get('name') ?? ticker;
 
   try {
     const supabase = await createServiceClient();
@@ -145,7 +146,7 @@ export async function GET(
     const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
     const dateRange = `${monthAgo.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
 
-    const prompt = `Write a structured stock research brief for ${ticker} covering ${dateRange}.
+    const prompt = `Write a structured stock research brief for ${companyName} (ticker: ${ticker}) covering ${dateRange}.
 
 Use this EXACT format. Only include a section if you have concrete, sourced information. If a section would require speculation, omit it entirely by writing NONE after the header.
 

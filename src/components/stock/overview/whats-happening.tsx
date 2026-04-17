@@ -71,7 +71,7 @@ function Section({
   );
 }
 
-export function WhatsHappening({ ticker }: { ticker: string }) {
+export function WhatsHappening({ ticker, companyName }: { ticker: string; companyName: string }) {
   const [data, setData] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -80,7 +80,10 @@ export function WhatsHappening({ ticker }: { ticker: string }) {
     setLoading(true);
     setError(false);
     try {
-      const url = `/api/stock/summary/${encodeURIComponent(ticker)}${refresh ? '?refresh=true' : ''}`;
+      const params = new URLSearchParams();
+      if (refresh) params.set('refresh', 'true');
+      params.set('name', companyName);
+      const url = `/api/stock/summary/${encodeURIComponent(ticker)}?${params.toString()}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch');
       const json: SummaryData = await res.json();

@@ -186,7 +186,7 @@ export function StockContent({
         return (
           <div className="space-y-6">
             <PriceChart ticker={ticker} initialData={historicalData} />
-            <WhatsHappening ticker={ticker} />
+            <WhatsHappening ticker={ticker} companyName={profile.companyName} />
             <KeyMetrics
               quote={quote}
               keyMetrics={keyMetricsData?.[0] ?? null}
