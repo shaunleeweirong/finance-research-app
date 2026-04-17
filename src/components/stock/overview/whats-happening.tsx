@@ -2,7 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { Sparkles, RefreshCw, ExternalLink } from 'lucide-react';
+import {
+  Sparkles,
+  RefreshCw,
+  ExternalLink,
+  TrendingUp,
+  TrendingDown,
+  Newspaper,
+  Megaphone,
+  Swords,
+  Eye,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface Citation {
   url: string;
@@ -12,8 +23,12 @@ interface Citation {
 interface SummaryData {
   title: string;
   dateRange: string;
-  highlights: string[];
-  body: string;
+  bullCase: string[];
+  bearCase: string[];
+  keyDevelopments: string[];
+  managementSignals: string[];
+  competitiveLandscape: string[];
+  whatToWatch: string[];
   citations: Citation[];
   generatedAt: string;
   cached: boolean;
@@ -25,6 +40,35 @@ function getDomain(url: string): string {
   } catch {
     return url;
   }
+}
+
+function Section({
+  icon: Icon,
+  label,
+  items,
+  color,
+}: {
+  icon: LucideIcon;
+  label: string;
+  items: string[];
+  color: string;
+}) {
+  if (!items.length) return null;
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center gap-1.5">
+        <Icon className={`h-3.5 w-3.5 ${color}`} />
+        <span className="text-xs font-semibold text-text">{label}</span>
+      </div>
+      <ul className="space-y-1 pl-5">
+        {items.map((item, i) => (
+          <li key={i} className="text-sm leading-relaxed text-text-muted list-disc">
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 export function WhatsHappening({ ticker }: { ticker: string }) {
@@ -56,7 +100,7 @@ export function WhatsHappening({ ticker }: { ticker: string }) {
 
   return (
     <Card className="p-5">
-      {/* Section label */}
+      {/* Header */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-amber-500" />
@@ -75,63 +119,38 @@ export function WhatsHappening({ ticker }: { ticker: string }) {
 
       {loading ? (
         <div className="space-y-3">
-          {/* Title skeleton */}
           <div className="h-5 w-3/4 animate-pulse rounded bg-border" />
-          {/* Date range skeleton */}
           <div className="h-3 w-48 animate-pulse rounded bg-border" />
-          {/* Highlights skeleton */}
           <div className="mt-3 space-y-2">
             <div className="h-3 w-11/12 animate-pulse rounded bg-border" />
             <div className="h-3 w-10/12 animate-pulse rounded bg-border" />
             <div className="h-3 w-9/12 animate-pulse rounded bg-border" />
           </div>
-          {/* Body skeleton */}
           <div className="mt-4 space-y-2">
             <div className="h-3 w-full animate-pulse rounded bg-border" />
             <div className="h-3 w-full animate-pulse rounded bg-border" />
             <div className="h-3 w-11/12 animate-pulse rounded bg-border" />
-            <div className="h-3 w-full animate-pulse rounded bg-border" />
-            <div className="h-3 w-4/5 animate-pulse rounded bg-border" />
           </div>
         </div>
       ) : data ? (
         <div>
-          {/* Title */}
           {data.title && (
             <h4 className="text-base font-semibold leading-snug text-text">
               {data.title}
             </h4>
           )}
-
-          {/* Date range */}
           {data.dateRange && (
             <p className="mt-1 text-xs text-text-muted/60">{data.dateRange}</p>
           )}
 
-          {/* Highlights */}
-          {data.highlights.length > 0 && (
-            <ul className="mt-3 space-y-1.5 border-l-2 border-primary/30 pl-3">
-              {data.highlights.map((h, i) => (
-                <li key={i} className="text-sm leading-relaxed text-text-muted">
-                  {h}
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {/* Body paragraphs */}
-          {data.body && (
-            <div className="mt-4 space-y-3">
-              {data.body.split(/\n\n+/).map((paragraph, i) => (
-                <p
-                  key={i}
-                  className="text-sm leading-relaxed text-text-muted"
-                >
-                  {paragraph.trim()}
-                </p>
-              ))}
-            </div>
-          )}
+          <div className="mt-4 space-y-4">
+            <Section icon={TrendingUp} label="Bull Case" items={data.bullCase} color="text-emerald-500" />
+            <Section icon={TrendingDown} label="Bear Case" items={data.bearCase} color="text-red-500" />
+            <Section icon={Newspaper} label="Key Developments" items={data.keyDevelopments} color="text-blue-500" />
+            <Section icon={Megaphone} label="Management Signals" items={data.managementSignals} color="text-violet-500" />
+            <Section icon={Swords} label="Competitive Landscape" items={data.competitiveLandscape} color="text-orange-500" />
+            <Section icon={Eye} label="What to Watch" items={data.whatToWatch} color="text-amber-500" />
+          </div>
 
           {/* Citations */}
           {data.citations.length > 0 && (
@@ -154,7 +173,6 @@ export function WhatsHappening({ ticker }: { ticker: string }) {
             </div>
           )}
 
-          {/* Footer */}
           <p className="mt-3 text-[11px] text-text-muted/60">
             AI-generated summary · may contain inaccuracies
           </p>

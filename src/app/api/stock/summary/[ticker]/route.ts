@@ -42,40 +42,58 @@ interface PerplexityResponse {
 interface ParsedSummary {
   title: string;
   dateRange: string;
-  highlights: string[];
-  body: string;
+  bullCase: string[];
+  bearCase: string[];
+  keyDevelopments: string[];
+  managementSignals: string[];
+  competitiveLandscape: string[];
+  whatToWatch: string[];
+}
+
+function parseSection(raw: string, sectionName: string): string[] {
+  const pattern = new RegExp(
+    `${sectionName}:\\s*\\n([\\s\\S]*?)(?=\\n(?:BULL CASE|BEAR CASE|KEY DEVELOPMENTS|MANAGEMENT SIGNALS|COMPETITIVE LANDSCAPE|WHAT TO WATCH|$))`,
+    'i',
+  );
+  const match = raw.match(pattern);
+  if (!match) return [];
+
+  return match[1]
+    .split('\n')
+    .map((line) => line.replace(/^[-•*]\s*/, '').replace(/\*\*/g, '').replace(/\[\d+\]/g, '').trim())
+    .filter((line) => line.length > 0 && !line.startsWith('NONE'));
 }
 
 function parseStructuredSummary(raw: string, dateRange: string): ParsedSummary {
-  // Extract title
   const titleMatch = raw.match(/TITLE:\s*(.+?)(?:\n|$)/);
-  const title = titleMatch?.[1]?.replace(/^["']|["']$/g, '').trim() ?? '';
+  const title = titleMatch?.[1]?.replace(/^["']|["']$/g, '').replace(/\*\*/g, '').trim() ?? '';
 
-  // Extract highlights (bullet lines between HIGHLIGHTS: and BODY:)
-  const highlightsMatch = raw.match(/HIGHLIGHTS:\s*\n([\s\S]*?)(?:\nBODY:|\n\n[A-Z])/);
-  const highlights = highlightsMatch?.[1]
-    ?.split('\n')
-    .map((line) => line.replace(/^[-•*]\s*/, '').trim())
-    .filter((line) => line.length > 0) ?? [];
+  const bullCase = parseSection(raw, 'BULL CASE');
+  const bearCase = parseSection(raw, 'BEAR CASE');
+  const keyDevelopments = parseSection(raw, 'KEY DEVELOPMENTS');
+  const managementSignals = parseSection(raw, 'MANAGEMENT SIGNALS');
+  const competitiveLandscape = parseSection(raw, 'COMPETITIVE LANDSCAPE');
+  const whatToWatch = parseSection(raw, 'WHAT TO WATCH');
 
-  // Extract body (everything after BODY:)
-  const bodyMatch = raw.match(/BODY:\s*\n([\s\S]*)/);
-  let body = bodyMatch?.[1]?.trim() ?? '';
-
-  // Fallback: if parsing failed, use the entire content
-  if (!title && !body) {
+  // Fallback: if no sections parsed, extract bullet lines from raw
+  if (!bullCase.length && !bearCase.length && !keyDevelopments.length) {
+    const lines = raw
+      .split('\n')
+      .map((l) => l.replace(/^[-•*]\s*/, '').replace(/\*\*/g, '').replace(/\[\d+\]/g, '').trim())
+      .filter((l) => l.length > 20);
     return {
-      title: '',
+      title: title || 'Stock Summary',
       dateRange,
-      highlights: [],
-      body: raw.trim(),
+      bullCase: lines.slice(0, 2),
+      bearCase: lines.slice(2, 4),
+      keyDevelopments: lines.slice(4, 6),
+      managementSignals: [],
+      competitiveLandscape: [],
+      whatToWatch: [],
     };
   }
 
-  // Clean up markdown artifacts (bold markers, etc.)
-  body = body.replace(/\*\*/g, '');
-
-  return { title, dateRange, highlights, body };
+  return { title, dateRange, bullCase, bearCase, keyDevelopments, managementSignals, competitiveLandscape, whatToWatch };
 }
 
 export async function GET(
@@ -109,20 +127,23 @@ export async function GET(
       .single();
 
     if (cached) {
-      // Parse stored JSON summary back into structured fields
-      let parsed: ParsedSummary;
+      let parsed: ParsedSummary | null;
       try {
-        parsed = JSON.parse(cached.summary);
+        const obj = JSON.parse(cached.summary);
+        parsed = obj.bullCase ? obj : null;
       } catch {
-        // Legacy plain-text format — wrap in body
-        parsed = { title: '', dateRange: '', highlights: [], body: cached.summary };
+        parsed = null;
       }
-      return NextResponse.json({
-        ...parsed,
-        citations: cached.citations ?? [],
-        generatedAt: cached.generated_at,
-        cached: true,
-      });
+      if (parsed) {
+        return NextResponse.json({
+          ...parsed,
+          citations: cached.citations ?? [],
+          generatedAt: cached.generated_at,
+          cached: true,
+        });
+      }
+      // Old format — delete stale cache so it regenerates
+      await supabase.from('stock_summaries').delete().eq('ticker', ticker);
     }
 
     // No valid cache — generate via Perplexity Sonar
@@ -134,32 +155,48 @@ export async function GET(
     }
 
     const today = new Date();
-    const weekAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const dateRange = `${weekAgo.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const dateRange = `${monthAgo.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
 
-    const prompt = `Write a structured stock analysis for ${ticker} covering the period ${dateRange}. Use this EXACT format:
+    const prompt = `Write a structured stock research brief for ${ticker} covering ${dateRange}.
 
-TITLE: [One compelling headline summarizing the key narrative, e.g. "Apple Inc Rallies on Strong Earnings Amid Tariff Concerns"]
+Use this EXACT format. Only include a section if you have concrete, sourced information. If a section would require speculation, omit it entirely by writing NONE after the header.
 
-HIGHLIGHTS:
-- [Key takeaway about stock price or performance]
-- [Key takeaway about major news or catalyst]
-- [Key takeaway about outlook or strategic development]
+TITLE: [Short, compelling headline — max 12 words]
 
-BODY:
-[4-5 well-structured paragraphs covering:
-1. Overall stock performance with specific percentage moves and comparison to S&P 500 and relevant sector ETF
-2. Major news events, catalysts, or earnings driving price action
-3. Analyst sentiment, upgrades/downgrades, or institutional activity
-4. Regulatory, legal, or macro risks affecting the company
-5. Forward-looking outlook including upcoming events or strategic initiatives]
+BULL CASE:
+- [Why optimists are buying — specific growth driver, catalyst, or positive data point]
+- [Another concrete bullish factor with numbers]
+- [Third bullish point if available]
+
+BEAR CASE:
+- [Why skeptics are cautious — specific risk, overvaluation concern, or negative data]
+- [Another concrete bearish factor with numbers]
+- [Third bearish point if available]
+
+KEY DEVELOPMENTS:
+- [Specific product launch, partnership, M&A, earnings result, or regulatory event with date]
+- [Another concrete development]
+
+MANAGEMENT SIGNALS:
+- [Recent earnings call quote, guidance change, buyback announcement, or insider buy/sell]
+- [Another management action if available]
+
+COMPETITIVE LANDSCAPE:
+- [How peers are performing, market share shift, or emerging competitive threat]
+
+WHAT TO WATCH:
+- [Upcoming earnings date with consensus EPS estimate]
+- [Specific catalyst event with date]
+- [Key metric or threshold to monitor]
 
 Rules:
-- Include specific numbers: percentage moves, price levels, market cap changes
-- Compare performance to S&P 500 and the relevant sector ETF
-- Write in professional, factual investor tone
-- Paragraphs should flow as narrative prose, not bullet points
-- Start the body directly with the company name`;
+- Each bullet must contain a specific fact, number, or date — no vague statements
+- Never fabricate quotes, analyst names, or price targets you cannot verify
+- If you have no sourced information for a section, write NONE (do not speculate)
+- Remove inline citation markers like [1][2] from the text
+- Keep each bullet to 1-2 sentences max
+- Do not include a BODY section`;
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -173,11 +210,11 @@ Rules:
           {
             role: 'system',
             content:
-              'You are a senior equity research analyst. Write structured stock summaries following the exact format requested. Be precise with data, include specific percentages and comparisons. Always cite sources.',
+              'You are a senior equity research analyst writing concise stock briefs. Every claim must be backed by data from your search results. Omit sections where you lack concrete information rather than speculating. Never include inline citation markers like [1] or [2] in your output text.',
           },
           { role: 'user', content: prompt },
         ],
-        max_tokens: 1000,
+        max_tokens: 800,
         temperature: 0.1,
       }),
     });
@@ -204,13 +241,9 @@ Rules:
       );
     }
 
-    // Parse structured output into title, highlights, body
     const parsed = parseStructuredSummary(rawContent, dateRange);
-
-    // Store as JSON in the summary column
     const summaryJson = JSON.stringify(parsed);
 
-    // Upsert into cache (insert or update if ticker already exists with stale data)
     await supabase.from('stock_summaries').upsert(
       {
         ticker,
