@@ -119,8 +119,8 @@ export function WatchlistTable({ initialItems }: WatchlistTableProps) {
         </select>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-surface">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+        <table className="w-full min-w-[600px] text-sm">
           <thead className="bg-surface-hover text-left text-xs uppercase tracking-wide text-text-muted">
             <tr>
               <th className="px-4 py-3 font-medium">Ticker</th>

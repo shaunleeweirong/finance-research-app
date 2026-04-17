@@ -99,7 +99,7 @@ export function PriceChart({ ticker, initialData }: PriceChartProps) {
       </div>
 
       {/* Chart */}
-      <div className={`h-72 ${isLoading ? 'opacity-50' : ''}`}>
+      <div className={`h-60 sm:h-72 ${isLoading ? 'opacity-50' : ''}`}>
         {chartData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>

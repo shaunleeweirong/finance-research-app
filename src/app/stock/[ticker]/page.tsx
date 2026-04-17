@@ -117,11 +117,11 @@ export default async function StockPage({
 
   return (
     <>
-      <div className="flex items-center justify-between py-4">
-        <div className="max-w-md flex-1">
+      <div className="flex items-center justify-between gap-3 py-4">
+        <div className="max-w-md flex-1 min-w-0">
           <SearchBar />
         </div>
-        <div className="ml-6 shrink-0">
+        <div className="shrink-0">
           <UserMenu />
         </div>
       </div>

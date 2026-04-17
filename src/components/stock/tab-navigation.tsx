@@ -37,7 +37,7 @@ export function TabNavigation({
     <Tabs value={activeTab} onValueChange={handleTabChange}>
       <TabsList
         variant="line"
-        className="w-full justify-start bg-surface border-b border-border rounded-none h-auto p-0 gap-0"
+        className="w-full justify-start bg-surface border-b border-border rounded-none h-auto p-0 gap-0 overflow-x-auto scrollbar-none"
       >
         {TABS.map((tab) => {
           const locked = !canAccess(plan, `tab:${tab.value}`);
@@ -46,7 +46,7 @@ export function TabNavigation({
               key={tab.value}
               value={tab.value}
               disabled={locked}
-              className={`rounded-none border-b-2 border-transparent data-active:border-primary data-active:bg-transparent data-active:text-foreground text-text-secondary px-4 py-3 text-sm font-medium ${
+              className={`rounded-none border-b-2 border-transparent data-active:border-primary data-active:bg-transparent data-active:text-foreground text-text-secondary px-3 sm:px-4 py-3 text-sm font-medium whitespace-nowrap ${
                 locked ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >

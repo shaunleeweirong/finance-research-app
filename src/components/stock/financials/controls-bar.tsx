@@ -59,9 +59,9 @@ export function ControlsBar({
   });
 
   return (
-    <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="flex flex-wrap items-end justify-between gap-3 sm:gap-4">
       {/* Statement sub-tabs */}
-      <div className="flex gap-1 pb-0.5">
+      <div className="flex gap-1 pb-0.5 overflow-x-auto scrollbar-none">
         {visibleStatements.map((key) => (
           <button
             key={key}

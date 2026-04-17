@@ -33,35 +33,35 @@ export default async function HomePage() {
   // Visitors see the landing page
   return (
     <main className="min-h-screen bg-background">
-      <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
-        <span className="text-lg font-bold text-foreground">FinanceResearch</span>
-        <div className="flex items-center gap-3">
-          <Link href="/pricing" className="text-sm text-text-secondary hover:text-foreground transition-colors">
+      <nav className="flex items-center justify-between px-4 sm:px-6 py-4 max-w-6xl mx-auto">
+        <span className="text-base sm:text-lg font-bold text-foreground shrink-0">FinanceResearch</span>
+        <div className="flex items-center gap-2 sm:gap-3 whitespace-nowrap">
+          <Link href="/pricing" className="hidden sm:inline text-sm text-text-secondary hover:text-foreground transition-colors py-2">
             Pricing
           </Link>
-          <Link href="/sign-in" className="rounded-md px-3 py-1.5 text-sm text-text-secondary hover:text-foreground transition-colors">
+          <Link href="/sign-in" className="rounded-md px-3 py-2 text-sm text-text-secondary hover:text-foreground transition-colors">
             Sign in
           </Link>
-          <Link href="/sign-up" className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-500 transition-colors">
-            Sign up free
+          <Link href="/sign-up" className="rounded-lg bg-blue-600 px-3 sm:px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors">
+            Sign up
           </Link>
         </div>
       </nav>
 
-      <section className="flex flex-col items-center justify-center px-4 pt-24 pb-20 text-center">
+      <section className="flex flex-col items-center justify-center px-4 pt-16 sm:pt-24 pb-16 sm:pb-20 text-center">
         <div className="max-w-3xl space-y-6">
-          <h1 className="text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
             Research stocks like a
             <span className="text-blue-500"> professional</span>
           </h1>
           <p className="mx-auto max-w-xl text-lg text-text-secondary">
             Interactive financial data, 40 years of history, analyst estimates, ownership data, and more — all in one platform.
           </p>
-          <div className="flex items-center justify-center gap-4 pt-4">
-            <Link href="/sign-up" className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-500 transition-colors">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-4">
+            <Link href="/sign-up" className="w-full sm:w-auto rounded-lg bg-blue-600 px-6 py-3 text-center text-sm font-medium text-white hover:bg-blue-500 transition-colors">
               Get started free
             </Link>
-            <Link href="/pricing" className="rounded-lg border border-border px-6 py-3 text-sm font-medium text-foreground hover:bg-surface transition-colors">
+            <Link href="/pricing" className="w-full sm:w-auto rounded-lg border border-border px-6 py-3 text-center text-sm font-medium text-foreground hover:bg-surface transition-colors">
               View pricing
             </Link>
           </div>

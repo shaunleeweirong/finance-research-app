@@ -36,7 +36,7 @@ export function CompanyProfile({ profile }: CompanyProfileProps) {
       )}
 
       {/* Key Facts */}
-      <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
         {facts.map((fact) => (
           <div key={fact.label}>
             <p className="text-xs text-text-muted">{fact.label}</p>
