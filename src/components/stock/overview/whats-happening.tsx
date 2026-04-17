@@ -76,11 +76,12 @@ export function WhatsHappening({ ticker }: { ticker: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  async function fetchSummary() {
+  async function fetchSummary(refresh = false) {
     setLoading(true);
     setError(false);
     try {
-      const res = await fetch(`/api/stock/summary/${encodeURIComponent(ticker)}`);
+      const url = `/api/stock/summary/${encodeURIComponent(ticker)}${refresh ? '?refresh=true' : ''}`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch');
       const json: SummaryData = await res.json();
       setData(json);
@@ -108,7 +109,7 @@ export function WhatsHappening({ ticker }: { ticker: string }) {
         </div>
         {!loading && data && (
           <button
-            onClick={fetchSummary}
+            onClick={() => fetchSummary(true)}
             className="inline-flex items-center gap-1 text-xs text-text-muted/60 transition-colors hover:text-primary"
           >
             <RefreshCw className="h-3 w-3" />

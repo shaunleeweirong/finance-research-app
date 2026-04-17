@@ -112,38 +112,42 @@ export async function GET(
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
+  const forceRefresh = new URL(_request.url).searchParams.get('refresh') === 'true';
+
   try {
     const supabase = await createServiceClient();
 
     // Check cache — return if summary exists and is less than 7 days old
-    const { data: cached } = await supabase
-      .from('stock_summaries')
-      .select('summary, citations, generated_at')
-      .eq('ticker', ticker)
-      .gte(
-        'generated_at',
-        new Date(Date.now() - CACHE_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString(),
-      )
-      .single();
+    if (!forceRefresh) {
+      const { data: cached } = await supabase
+        .from('stock_summaries')
+        .select('summary, citations, generated_at')
+        .eq('ticker', ticker)
+        .gte(
+          'generated_at',
+          new Date(Date.now() - CACHE_TTL_DAYS * 24 * 60 * 60 * 1000).toISOString(),
+        )
+        .single();
 
-    if (cached) {
-      let parsed: ParsedSummary | null;
-      try {
-        const obj = JSON.parse(cached.summary);
-        parsed = obj.bullCase ? obj : null;
-      } catch {
-        parsed = null;
+      if (cached) {
+        let parsed: ParsedSummary | null;
+        try {
+          const obj = JSON.parse(cached.summary);
+          parsed = obj.bullCase ? obj : null;
+        } catch {
+          parsed = null;
+        }
+        if (parsed) {
+          return NextResponse.json({
+            ...parsed,
+            citations: cached.citations ?? [],
+            generatedAt: cached.generated_at,
+            cached: true,
+          });
+        }
+        // Old format — delete stale cache so it regenerates
+        await supabase.from('stock_summaries').delete().eq('ticker', ticker);
       }
-      if (parsed) {
-        return NextResponse.json({
-          ...parsed,
-          citations: cached.citations ?? [],
-          generatedAt: cached.generated_at,
-          cached: true,
-        });
-      }
-      // Old format — delete stale cache so it regenerates
-      await supabase.from('stock_summaries').delete().eq('ticker', ticker);
     }
 
     // No valid cache — generate via Perplexity Sonar
