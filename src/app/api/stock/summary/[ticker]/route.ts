@@ -1,19 +1,27 @@
 import { NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { getUserPlan } from '@/lib/auth/get-user-plan';
+import { canAccess } from '@/lib/auth/plans';
 
 const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
 const CACHE_TTL_DAYS = 7;
 
-// Simple in-memory rate limiter: max 10 generation requests per IP per minute
+// Soft per-user throttle: max 10 generation requests per user per minute.
+// NOTE: This Map is per-serverless-isolate and resets on cold starts. It is
+// NOT a durable rate limiter — for defense against cost abuse we rely on:
+//   1) Mandatory authentication (checked in-handler below)
+//   2) The 7-day Supabase cache (1 Perplexity call per ticker per week)
+//   3) `?refresh=true` gated to premium plan (paying customers)
+// For a durable limiter, migrate to Upstash Redis or Vercel KV.
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 10;
 
-function isRateLimited(ip: string): boolean {
+function isRateLimited(key: string): boolean {
   const now = Date.now();
-  const entry = rateLimitMap.get(ip);
+  const entry = rateLimitMap.get(key);
   if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
     return false;
   }
   entry.count++;
@@ -89,13 +97,24 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid ticker' }, { status: 400 });
   }
 
-  // Rate limit before any expensive work
-  const ip = _request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? '127.0.0.1';
-  if (isRateLimited(ip)) {
+  // Defense-in-depth auth check (middleware also enforces this).
+  const userClient = await createClient();
+  const { data: { user } } = await userClient.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Rate limit per authenticated user
+  if (isRateLimited(user.id)) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
-  const forceRefresh = new URL(_request.url).searchParams.get('refresh') === 'true';
+  // Only premium users can bypass the 7-day cache; prevents free users from
+  // forcing paid Perplexity calls by spamming `?refresh=true`.
+  const refreshRequested = new URL(_request.url).searchParams.get('refresh') === 'true';
+  const userPlan = await getUserPlan(user.id);
+  const forceRefresh = refreshRequested && canAccess(userPlan, 'ai:copilot');
+
   const rawName = new URL(_request.url).searchParams.get('name') ?? ticker;
   const companyName = rawName.replace(/[^a-zA-Z0-9\s.,&'\-()]/g, '').slice(0, 100);
 
