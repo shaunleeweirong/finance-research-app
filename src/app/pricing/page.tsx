@@ -6,7 +6,6 @@ import { ArrowRight, Check, ShieldCheck, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { MarketingNav } from '@/components/marketing/marketing-nav';
 import { MarketingFooter } from '@/components/marketing/marketing-footer';
-import { WaitlistForm } from '@/components/landing/waitlist-form';
 import type { User } from '@supabase/supabase-js';
 
 type Interval = 'monthly' | 'annual';
@@ -80,10 +79,10 @@ const TIERS: Tier[] = [
     monthlyPrice: 35,
     annualPrice: 28,
     description: 'Full platform with AI features.',
-    cta: 'Join waitlist',
+    cta: 'Coming soon',
     comingSoon: true,
     badge: 'COMING SOON',
-    note: 'Be first in line',
+    note: 'Start with Free — upgrade at launch',
     features: [
       { name: 'Everything in Pro', included: true },
       { name: 'AI Copilot (200 queries/mo)', included: true },
@@ -391,8 +390,12 @@ export default function PricingPage() {
                       {tier.cta} <ArrowRight className="h-3.5 w-3.5" style={{ opacity: 0.7 }} />
                     </Link>
                   ) : tier.comingSoon ? (
-                    <div style={{ marginBottom: 6 }}>
-                      <WaitlistForm />
+                    <div
+                      aria-disabled="true"
+                      className="mk-btn mk-btn-secondary"
+                      style={{ width: '100%', padding: '14px', fontSize: 14, cursor: 'default', opacity: 0.75 }}
+                    >
+                      Coming soon
                     </div>
                   ) : (
                     <button

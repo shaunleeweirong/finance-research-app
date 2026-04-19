@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Check, ShieldCheck } from 'lucide-react';
-import { WaitlistForm } from '@/components/landing/waitlist-form';
 
 type Interval = 'monthly' | 'annual';
 
@@ -65,7 +64,7 @@ const TIERS: Tier[] = [
     monthly: 35,
     annual: 28,
     desc: 'Full platform with AI features.',
-    cta: 'Join waitlist',
+    cta: 'Coming soon',
     soon: true,
     badge: 'COMING SOON',
     features: [
@@ -74,7 +73,7 @@ const TIERS: Tier[] = [
       'Peer comparison',
       'Priority support',
     ],
-    note: 'Be first in line',
+    note: 'Start with Free — upgrade at launch',
   },
 ];
 
@@ -111,69 +110,71 @@ export function MarketingPricingCards({ isAuthenticated }: Props) {
 
   return (
     <>
-      <div
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          padding: 4,
-          background: 'var(--mk-bg-warm)',
-          borderRadius: 999,
-          marginTop: 24,
-          border: '1px solid var(--mk-line)',
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => setInterval('monthly')}
-          className="mk-grotesk"
-          style={pillTab(interval === 'monthly')}
+      <div style={{ textAlign: 'center' }}>
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            padding: 4,
+            background: 'var(--mk-bg-warm)',
+            borderRadius: 999,
+            marginTop: 24,
+            border: '1px solid var(--mk-line)',
+          }}
         >
-          Monthly
-        </button>
-        <button
-          type="button"
-          onClick={() => setInterval('annual')}
-          className="mk-grotesk"
-          style={{ ...pillTab(interval === 'annual'), display: 'inline-flex', alignItems: 'center', gap: 8 }}
-        >
-          Annual
-          <span
-            style={{
-              background: 'var(--mk-accent-soft)',
-              color: 'var(--mk-accent)',
-              padding: '2px 8px',
-              borderRadius: 999,
-              fontSize: 10,
-              fontFamily: 'var(--font-dm-mono), "DM Mono", monospace',
-              letterSpacing: 0.04,
-            }}
+          <button
+            type="button"
+            onClick={() => setInterval('monthly')}
+            className="mk-grotesk"
+            style={pillTab(interval === 'monthly')}
           >
-            2 MO FREE
-          </span>
-        </button>
-      </div>
+            Monthly
+          </button>
+          <button
+            type="button"
+            onClick={() => setInterval('annual')}
+            className="mk-grotesk"
+            style={{ ...pillTab(interval === 'annual'), display: 'inline-flex', alignItems: 'center', gap: 8 }}
+          >
+            Annual
+            <span
+              style={{
+                background: 'var(--mk-accent-soft)',
+                color: 'var(--mk-accent)',
+                padding: '2px 8px',
+                borderRadius: 999,
+                fontSize: 10,
+                fontFamily: 'var(--font-dm-mono), "DM Mono", monospace',
+                letterSpacing: 0.04,
+              }}
+            >
+              2 MO FREE
+            </span>
+          </button>
+        </div>
 
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 16,
-          justifyContent: 'center',
-          marginTop: 16,
-          fontFamily: 'var(--font-dm-mono), "DM Mono", monospace',
-          fontSize: 11,
-          color: 'var(--mk-ink-mute)',
-        }}
-      >
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-          <ShieldCheck className="h-3.5 w-3.5" style={{ color: 'var(--mk-accent)' }} /> Cancel anytime
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-          <ShieldCheck className="h-3.5 w-3.5" style={{ color: 'var(--mk-accent)' }} /> 7-day money-back
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-          <ShieldCheck className="h-3.5 w-3.5" style={{ color: 'var(--mk-accent)' }} /> Stripe checkout
-        </span>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 16,
+            justifyContent: 'center',
+            marginTop: 16,
+            fontFamily: 'var(--font-dm-mono), "DM Mono", monospace',
+            fontSize: 11,
+            color: 'var(--mk-ink-mute)',
+          }}
+        >
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <ShieldCheck className="h-3.5 w-3.5" style={{ color: 'var(--mk-accent)' }} /> Cancel anytime
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <ShieldCheck className="h-3.5 w-3.5" style={{ color: 'var(--mk-accent)' }} /> 7-day money-back
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <ShieldCheck className="h-3.5 w-3.5" style={{ color: 'var(--mk-accent)' }} /> Stripe checkout
+          </span>
+        </div>
       </div>
 
       <div
@@ -181,9 +182,9 @@ export function MarketingPricingCards({ isAuthenticated }: Props) {
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 18,
-          maxWidth: 1100,
-          margin: '48px auto 0',
+          gap: 24,
+          maxWidth: 1144,
+          margin: '64px auto 0',
         }}
       >
         {TIERS.map((t) => {
@@ -279,8 +280,12 @@ export function MarketingPricingCards({ isAuthenticated }: Props) {
                   {t.cta} <ArrowRight className="h-3.5 w-3.5" style={{ opacity: 0.7 }} />
                 </Link>
               ) : t.soon ? (
-                <div style={{ marginBottom: 8 }}>
-                  <WaitlistForm />
+                <div
+                  aria-disabled="true"
+                  className="mk-btn mk-btn-secondary"
+                  style={{ width: '100%', padding: '14px', fontSize: 14, cursor: 'default', opacity: 0.75 }}
+                >
+                  Coming soon
                 </div>
               ) : (
                 <button

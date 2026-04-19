@@ -611,8 +611,8 @@ function Pricing({ isAuthenticated }: { isAuthenticated: boolean }) {
           >
             Choose the plan that fits your research. Upgrade or downgrade anytime.
           </p>
-          <MarketingPricingCards isAuthenticated={isAuthenticated} />
         </div>
+        <MarketingPricingCards isAuthenticated={isAuthenticated} />
       </div>
     </section>
   );
