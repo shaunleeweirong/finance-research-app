@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FinanceResearch — Stock Research Platform",
+  title: "FinanceResearch — The research terminal for retail investors",
   description:
-    "Research any public company with interactive financial data, charts, and analysis.",
+    "Everything a serious investor needs to analyze a stock — 40-year financials, analyst estimates, ownership data, and AI briefs. Institutional-grade data, retail-grade pricing. From $0/mo.",
 };
 
 export default function RootLayout({
