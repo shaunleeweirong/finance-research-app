@@ -27,7 +27,21 @@ export function WaitlistForm() {
 
   if (submitted) {
     return (
-      <div className="mb-6 flex items-center justify-center gap-2 rounded-lg border border-green-500/30 bg-green-500/5 px-4 py-2.5 text-sm text-green-400">
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          borderRadius: 10,
+          border: '1px solid #b9d3c8',
+          background: 'var(--mk-accent-soft)',
+          padding: '10px 14px',
+          fontSize: 13,
+          color: 'var(--mk-accent)',
+          fontWeight: 600,
+        }}
+      >
         <Check className="h-4 w-4 shrink-0" />
         <span>You&apos;re on the waitlist</span>
       </div>
@@ -35,19 +49,34 @@ export function WaitlistForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="mb-6 flex flex-col gap-2 sm:flex-row">
+    <form
+      onSubmit={onSubmit}
+      style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+    >
       <input
         type="email"
         required
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="you@email.com"
-        className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm text-foreground placeholder:text-text-muted focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        style={{
+          height: 42,
+          width: '100%',
+          borderRadius: 10,
+          border: '1px solid var(--mk-line-strong)',
+          background: 'var(--mk-paper)',
+          padding: '0 14px',
+          fontSize: 14,
+          color: 'var(--mk-ink)',
+          outline: 'none',
+          fontFamily: 'inherit',
+        }}
       />
       <button
         type="submit"
         disabled={loading}
-        className="h-10 shrink-0 rounded-lg bg-blue-600 px-4 text-sm font-medium text-white hover:bg-blue-500 transition-colors disabled:opacity-60"
+        className="mk-btn mk-btn-primary"
+        style={{ width: '100%', padding: '13px', fontSize: 14, opacity: loading ? 0.6 : 1 }}
       >
         {loading ? 'Joining…' : 'Join waitlist'}
       </button>

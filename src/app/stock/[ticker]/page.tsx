@@ -13,8 +13,6 @@ import {
 } from '@/lib/fmp';
 import { CompanyHeader } from '@/components/stock/company-header';
 import { StockContent } from '@/components/stock/stock-content';
-import { SearchBar } from '@/components/search/search-bar';
-import { UserMenu } from '@/components/auth/user-menu';
 import { WatchlistToggleButton } from '@/components/watchlist/watchlist-toggle-button';
 import { getDateRangeForPeriod } from '@/lib/utils/chart-helpers';
 import { canAccess, type Plan } from '@/lib/auth/plans';
@@ -117,15 +115,6 @@ export default async function StockPage({
 
   return (
     <>
-      <div className="flex items-center justify-between gap-3 py-4">
-        <div className="max-w-md flex-1 min-w-0">
-          <SearchBar />
-        </div>
-        <div className="shrink-0">
-          <UserMenu />
-        </div>
-      </div>
-
       <CompanyHeader
         profile={profile}
         quote={resolvedQuote}

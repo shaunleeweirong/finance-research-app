@@ -1,235 +1,535 @@
 import { createClient } from '@/lib/supabase/server';
-import { SearchBar } from '@/components/search/search-bar';
-import { UserMenu } from '@/components/auth/user-menu';
 import { StickyCta } from '@/components/landing/sticky-cta';
+import { MarketingPricingCards } from '@/components/marketing/pricing-cards';
+import { HeroMockup } from '@/components/marketing/hero-mockup';
+import { MarketingNav } from '@/components/marketing/marketing-nav';
+import { MarketingFooter } from '@/components/marketing/marketing-footer';
+import { AppNav } from '@/components/app/app-nav';
+import { Dashboard } from '@/components/app/dashboard';
+import { getUserPlan } from '@/lib/auth/get-user-plan';
+import { getBatchQuotes } from '@/lib/fmp';
+import type { FMPQuote } from '@/lib/fmp/types';
 import Link from 'next/link';
 import {
+  ArrowRight,
+  BarChart2,
   BarChart3,
-  LineChart,
-  Zap,
-  Users,
   Calculator,
   Check,
-  TrendingUp,
+  LineChart,
+  Minus,
   Sparkles,
+  Users,
 } from 'lucide-react';
+
+const INDEX_TICKERS = ['SPY', 'QQQ', 'DIA', 'IWM'];
+const TRENDING_TICKERS = ['AAPL', 'NVDA', 'MSFT', 'META', 'TSLA', 'GOOGL'];
+
+async function safeBatchQuotes(tickers: string[]): Promise<FMPQuote[]> {
+  if (tickers.length === 0) return [];
+  try {
+    return await getBatchQuotes(tickers);
+  } catch {
+    return [];
+  }
+}
 
 export default async function HomePage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Signed-in users see the search experience
   if (user) {
+    const [plan, watchlistRows, indexQuotes, trendingQuotes] = await Promise.all([
+      getUserPlan(user.id),
+      supabase
+        .from('watchlist')
+        .select('ticker, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(6),
+      safeBatchQuotes(INDEX_TICKERS),
+      safeBatchQuotes(TRENDING_TICKERS),
+    ]);
+
+    const watchlistTickers = (watchlistRows.data ?? []).map((r) => r.ticker);
+    const watchlistQuotes = await safeBatchQuotes(watchlistTickers);
+    // Preserve the user's watchlist order (most recent first)
+    const orderedWatchlist = watchlistTickers
+      .map((t) => watchlistQuotes.find((q) => q.symbol === t))
+      .filter((q): q is FMPQuote => Boolean(q));
+
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center px-4">
-        <div className="absolute top-4 right-6">
-          <UserMenu />
-        </div>
-        <div className="w-full max-w-2xl space-y-8 text-center">
-          <div className="space-y-3">
-            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-              FinanceResearch
-            </h1>
-            <p className="text-lg text-text-secondary">
-              Your research terminal — ready to search any public company.
-            </p>
-          </div>
-          <SearchBar size="large" />
-        </div>
-      </main>
+      <>
+        <AppNav />
+        <Dashboard
+          userEmail={user.email}
+          userName={user.user_metadata?.full_name ?? null}
+          plan={plan}
+          watchlistQuotes={orderedWatchlist}
+          indexQuotes={indexQuotes}
+          trendingQuotes={trendingQuotes}
+        />
+      </>
     );
   }
 
-  // Visitors see the landing page
   return (
-    <main className="min-h-screen bg-background pb-20 sm:pb-0">
-      {/* Nav */}
-      <nav className="sticky top-0 z-30 border-b border-border/50 bg-background/80 backdrop-blur-sm">
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 max-w-6xl mx-auto">
-          <span className="text-base sm:text-lg font-bold text-foreground shrink-0">FinanceResearch</span>
-          <div className="flex items-center gap-2 sm:gap-3 whitespace-nowrap">
-            <Link href="/pricing" className="hidden sm:inline text-sm text-text-secondary hover:text-foreground transition-colors py-2">
-              Pricing
-            </Link>
-            <Link href="/sign-in" className="rounded-md px-3 py-2 text-sm text-text-secondary hover:text-foreground transition-colors">
-              Sign in
-            </Link>
-            <Link href="/sign-up" className="rounded-lg bg-blue-600 px-3 sm:px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition-colors">
-              Sign up
-            </Link>
-          </div>
-        </div>
-      </nav>
+    <div className="marketing-theme" style={{ minHeight: '100vh' }}>
+      <MarketingNav isAuthenticated={false} />
+      <main>
+        <Hero />
+        <TrustBar />
+        <Features />
+        <Comparison />
+        <Pricing isAuthenticated={false} />
+        <FAQ />
+        <FinalCTA />
+      </main>
+      <MarketingFooter />
+      <StickyCta />
+    </div>
+  );
+}
 
-      {/* Hero */}
-      <section className="relative overflow-hidden px-4 pt-12 sm:pt-20 pb-12 sm:pb-16">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-blue-600/5 via-transparent to-transparent" />
-        <div className="mx-auto max-w-6xl grid gap-10 lg:grid-cols-[1.05fr_1fr] lg:items-center">
-          <div className="text-center lg:text-left space-y-5 sm:space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/5 px-3 py-1 text-xs font-medium text-blue-400">
-              <Sparkles className="h-3 w-3" />
-              <span>Now with AI stock briefs</span>
+function Hero() {
+  return (
+    <section className="mk-grain" style={{ position: 'relative', overflow: 'hidden' }}>
+      <div
+        style={{
+          maxWidth: 1200,
+          margin: '0 auto',
+          padding: '72px 28px 60px',
+          position: 'relative',
+        }}
+      >
+        <div
+          className="mk-hero-grid"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1.05fr 1fr',
+            gap: 64,
+            alignItems: 'center',
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <div className="mk-pill mk-pill-accent" style={{ marginBottom: 22 }}>
+              <span className="mk-dot" /> NEW · AI stock briefs
             </div>
-            <h1 className="text-[2rem] leading-[1.1] font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-              The research terminal for
-              <br className="hidden sm:block" />{' '}
-              <span className="text-blue-500">retail investors.</span>
+            <h1
+              className="mk-display mk-hero-h1"
+              style={{
+                fontSize: 'clamp(32px, 5.6vw, 72px)',
+                lineHeight: 1.02,
+                letterSpacing: '-0.035em',
+                margin: '0 0 22px',
+                fontWeight: 700,
+              }}
+            >
+              The research terminal for{' '}
+              <span
+                style={{
+                  color: 'var(--mk-accent)',
+                  fontStyle: 'italic',
+                  fontWeight: 600,
+                }}
+              >
+                retail investors.
+              </span>
             </h1>
-            <p className="mx-auto lg:mx-0 max-w-xl text-base sm:text-lg text-text-secondary">
-              Everything a serious investor needs to analyze a stock — without the Bloomberg bill
-              or the enterprise demo call. Institutional-grade data. Retail-grade pricing.
+            <p
+              style={{
+                fontSize: 18,
+                lineHeight: 1.55,
+                color: 'var(--mk-ink-soft)',
+                maxWidth: 560,
+                margin: '0 0 32px',
+              }}
+            >
+              Everything a serious investor needs to analyze a stock — without the Bloomberg bill or the
+              enterprise demo call. Institutional-grade data. Retail-grade pricing.
             </p>
-            <div className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3 pt-1">
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 18 }}>
               <Link
                 href="/sign-up"
-                className="w-full sm:w-auto rounded-lg bg-blue-600 px-6 py-3.5 text-center text-sm font-semibold text-white hover:bg-blue-500 transition-colors shadow-lg shadow-blue-600/20"
+                className="mk-btn mk-btn-primary"
+                style={{ padding: '15px 22px', fontSize: 15 }}
               >
-                Start researching — free
+                Start researching — free <ArrowRight className="h-3.5 w-3.5" style={{ opacity: 0.7 }} />
               </Link>
               <Link
-                href="/pricing"
-                className="w-full sm:w-auto rounded-lg border border-border px-6 py-3.5 text-center text-sm font-medium text-foreground hover:bg-surface transition-colors"
+                href="#pricing"
+                className="mk-btn mk-btn-secondary"
+                style={{ padding: '15px 22px', fontSize: 15 }}
               >
-                View pricing
+                See pricing
               </Link>
             </div>
-            <p className="text-xs text-text-muted">
-              ✓ No credit card required &nbsp;·&nbsp; ✓ Free forever plan &nbsp;·&nbsp; ✓ Cancel anytime
-            </p>
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 18,
+                fontFamily: 'var(--font-dm-mono), "DM Mono", monospace',
+                fontSize: 11,
+                color: 'var(--mk-ink-mute)',
+              }}
+            >
+              <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                <Check className="h-3 w-3" style={{ color: 'var(--mk-accent)' }} /> No card required
+              </span>
+              <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                <Check className="h-3 w-3" style={{ color: 'var(--mk-accent)' }} /> Free forever plan
+              </span>
+              <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                <Check className="h-3 w-3" style={{ color: 'var(--mk-accent)' }} /> Cancel anytime
+              </span>
+            </div>
           </div>
 
-          {/* Product mockup */}
-          <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
-            <div className="absolute -inset-4 -z-10 rounded-3xl bg-gradient-to-br from-blue-600/20 via-blue-500/5 to-transparent blur-2xl" />
-            <ProductMockup />
+          <div style={{ position: 'relative' }}>
+            <div
+              style={{
+                position: 'absolute',
+                inset: '-40px',
+                background:
+                  'radial-gradient(60% 60% at 60% 40%, rgba(31,83,64,0.18), transparent 70%)',
+                filter: 'blur(20px)',
+                zIndex: 0,
+              }}
+            />
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <HeroMockup />
+            </div>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
+  );
+}
 
-      {/* Trust bar */}
-      <section className="border-y border-border/60 bg-surface/30 px-4 py-5 sm:py-6">
-        <div className="mx-auto max-w-6xl grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
-          {[
-            { value: '60,000+', label: 'Global tickers' },
-            { value: '40 years', label: 'Historical data' },
-            { value: '100+', label: 'Financial metrics' },
-            { value: 'Real-time', label: 'Market quotes' },
-          ].map((s) => (
-            <div key={s.label} className="text-center">
-              <div className="text-lg sm:text-2xl font-bold text-foreground">{s.value}</div>
-              <div className="text-xs sm:text-sm text-text-muted">{s.label}</div>
+function TrustBar() {
+  const stats = [
+    { v: '60,000+', l: 'Global tickers' },
+    { v: '40 years', l: 'Historical data' },
+    { v: '100+', l: 'Financial metrics' },
+    { v: 'Real-time', l: 'Market quotes' },
+  ];
+  return (
+    <section
+      style={{
+        borderTop: '1px solid var(--mk-line)',
+        borderBottom: '1px solid var(--mk-line)',
+        background: 'var(--mk-bg-warm)',
+      }}
+    >
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: 28 }}>
+        <div
+          className="mk-trust-grid"
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}
+        >
+          {stats.map((s, i) => (
+            <div
+              key={s.l}
+              style={{
+                textAlign: 'center',
+                borderLeft: i ? '1px solid var(--mk-line)' : 'none',
+                padding: '6px 12px',
+              }}
+            >
+              <div
+                className="mk-display mk-tabular"
+                style={{ fontSize: 28, fontWeight: 700, letterSpacing: '-0.025em' }}
+              >
+                {s.v}
+              </div>
+              <div className="mk-eyebrow" style={{ marginTop: 4 }}>
+                {s.l}
+              </div>
             </div>
           ))}
         </div>
-      </section>
+      </div>
+    </section>
+  );
+}
 
-      {/* Features */}
-      <section className="px-4 py-14 sm:py-20 max-w-6xl mx-auto">
-        <div className="mb-10 sm:mb-14 text-center max-w-2xl mx-auto">
-          <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
+function Features() {
+  const features = [
+    {
+      icon: Sparkles,
+      t: 'AI Stock Briefs',
+      d: 'Instant AI-generated company summaries with key highlights, recent catalysts, and risks — in plain English.',
+      tag: 'NEW',
+    },
+    {
+      icon: BarChart3,
+      t: '40-Year Financials',
+      d: 'Income statements, balance sheets, cash flow, and ratios spanning four decades. Source: SEC filings.',
+    },
+    {
+      icon: LineChart,
+      t: 'Interactive Charts',
+      d: 'Visualize any metric with multi-series charts, custom ranges, and side-by-side comparison.',
+    },
+    {
+      icon: BarChart2,
+      t: 'Analyst Estimates',
+      d: 'Forward revenue, EPS, and EBITDA consensus with price targets, surprises, and revisions.',
+    },
+    {
+      icon: Users,
+      t: 'Ownership Data',
+      d: 'Institutional holders, insider trading activity, and ownership trend lines updated weekly.',
+    },
+    {
+      icon: Calculator,
+      t: 'Valuation Models',
+      d: 'Built-in DCF and EPS calculators. Tweak assumptions, see fair value live.',
+    },
+  ];
+  return (
+    <section id="features" style={{ padding: '100px 0' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px' }}>
+        <div style={{ maxWidth: 680, marginBottom: 60 }}>
+          <div className="mk-eyebrow" style={{ marginBottom: 14 }}>
+            <span className="mk-dot" />
+            FEATURES
+          </div>
+          <h2
+            className="mk-display"
+            style={{
+              fontSize: 'clamp(32px, 4vw, 48px)',
+              fontWeight: 700,
+              letterSpacing: '-0.03em',
+              margin: 0,
+              lineHeight: 1.05,
+            }}
+          >
             A terminal, without the terminal.
           </h2>
-          <p className="mt-3 text-sm sm:text-base text-text-secondary">
+          <p
+            style={{
+              fontSize: 17,
+              color: 'var(--mk-ink-soft)',
+              marginTop: 14,
+              lineHeight: 1.5,
+            }}
+          >
             The depth institutions pay thousands for — packaged for self-directed investors.
           </p>
         </div>
-        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              icon: BarChart3,
-              title: '40-Year Financials',
-              desc: 'Income statements, balance sheets, cash flow, and ratios spanning decades.',
-            },
-            {
-              icon: Zap,
-              title: 'Analyst Estimates',
-              desc: 'Revenue, EPS, and EBITDA consensus forecasts with price targets.',
-            },
-            {
-              icon: Users,
-              title: 'Ownership Data',
-              desc: 'Institutional holders, insider trading activity, and ownership trends.',
-            },
-            {
-              icon: LineChart,
-              title: 'Interactive Charts',
-              desc: 'Visualize any metric with multi-series charts and flexible time ranges.',
-            },
-            {
-              icon: Calculator,
-              title: 'Valuation Models',
-              desc: 'Built-in DCF and EPS valuation calculators with editable assumptions.',
-            },
-            {
-              icon: Sparkles,
-              title: 'AI Stock Briefs',
-              desc: 'Instant AI-generated company summaries with key highlights and risks.',
-            },
-          ].map((feature) => (
-            <div
-              key={feature.title}
-              className="rounded-xl border border-border bg-surface p-5 sm:p-6 hover:border-blue-500/40 transition-colors"
-            >
-              <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-                <feature.icon className="h-5 w-5 text-blue-500" />
+        <div
+          className="mk-features-grid"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 1,
+            background: 'var(--mk-line)',
+            border: '1px solid var(--mk-line)',
+            borderRadius: 'var(--mk-radius-lg)',
+            overflow: 'hidden',
+          }}
+        >
+          {features.map((f) => {
+            const Icon = f.icon;
+            return (
+              <div
+                key={f.t}
+                style={{ background: 'var(--mk-bg)', padding: 28, position: 'relative' }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: 22,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 12,
+                      background: 'var(--mk-accent-soft)',
+                      color: 'var(--mk-accent)',
+                      display: 'grid',
+                      placeItems: 'center',
+                    }}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  {f.tag && (
+                    <span className="mk-pill mk-pill-accent" style={{ fontSize: 9 }}>
+                      {f.tag}
+                    </span>
+                  )}
+                </div>
+                <h3
+                  className="mk-display"
+                  style={{
+                    fontSize: 19,
+                    fontWeight: 700,
+                    letterSpacing: '-0.015em',
+                    margin: '0 0 8px',
+                  }}
+                >
+                  {f.t}
+                </h3>
+                <p
+                  style={{
+                    fontSize: 14.5,
+                    color: 'var(--mk-ink-soft)',
+                    lineHeight: 1.5,
+                    margin: 0,
+                  }}
+                >
+                  {f.d}
+                </p>
               </div>
-              <h3 className="mb-1.5 font-semibold text-foreground">{feature.title}</h3>
-              <p className="text-sm text-text-secondary leading-relaxed">{feature.desc}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
-      </section>
+      </div>
+    </section>
+  );
+}
 
-      {/* Comparison */}
-      <section className="px-4 py-14 sm:py-20 bg-surface/30 border-y border-border/60">
-        <div className="mx-auto max-w-4xl">
-          <div className="mb-8 sm:mb-12 text-center max-w-2xl mx-auto">
-            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
-              Deeper than Yahoo. Cheaper than Bloomberg.
-            </h2>
-            <p className="mt-3 text-sm sm:text-base text-text-secondary">
-              A research terminal built for retail investors — not institutional budgets.
-            </p>
+function Comparison() {
+  const rows: Array<[string, boolean, boolean, boolean]> = [
+    ['40-year financial history', true, true, false],
+    ['Interactive multi-metric charts', true, true, false],
+    ['Analyst estimates & revisions', true, true, false],
+    ['Ownership & insider data', true, true, false],
+    ['AI-generated stock briefs', true, false, false],
+    ['DCF / EPS valuation models', true, true, false],
+    ['Built specifically for retail', true, false, true],
+    ['Costs less than a coffee/week', true, false, true],
+  ];
+  const thStyle: React.CSSProperties = {
+    padding: '18px 16px',
+    fontSize: 14,
+    color: 'var(--mk-ink)',
+    textAlign: 'center',
+    borderBottom: '1px solid var(--mk-line)',
+  };
+  const tdStyle: React.CSSProperties = {
+    padding: '14px 16px',
+    fontSize: 14,
+    color: 'var(--mk-ink-2)',
+    textAlign: 'center',
+    borderBottom: '1px solid var(--mk-line)',
+  };
+  return (
+    <section
+      id="compare"
+      style={{
+        padding: '90px 0',
+        borderTop: '1px solid var(--mk-line)',
+        background: 'var(--mk-bg-warm)',
+      }}
+    >
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px' }}>
+        <div style={{ textAlign: 'center', maxWidth: 680, margin: '0 auto 50px' }}>
+          <div className="mk-eyebrow" style={{ marginBottom: 14 }}>
+            <span className="mk-dot" />
+            COMPARE
           </div>
-          <div className="overflow-x-auto -mx-4 px-4">
-            <table className="w-full min-w-[520px] border-separate border-spacing-0 text-sm">
+          <h2
+            className="mk-display"
+            style={{
+              fontSize: 'clamp(32px, 4vw, 48px)',
+              fontWeight: 700,
+              letterSpacing: '-0.03em',
+              margin: 0,
+              lineHeight: 1.05,
+            }}
+          >
+            Deeper than Yahoo.
+            <br />
+            Cheaper than Bloomberg.
+          </h2>
+          <p
+            style={{
+              fontSize: 17,
+              color: 'var(--mk-ink-soft)',
+              marginTop: 14,
+              lineHeight: 1.5,
+            }}
+          >
+            A research terminal built for retail investors — not institutional budgets.
+          </p>
+        </div>
+        <div
+          style={{
+            background: 'var(--mk-paper)',
+            border: '1px solid var(--mk-line)',
+            borderRadius: 'var(--mk-radius)',
+            padding: 0,
+            overflow: 'hidden',
+            maxWidth: 880,
+            margin: '0 auto',
+          }}
+        >
+          <div style={{ overflowX: 'auto' }}>
+            <table
+              style={{
+                width: '100%',
+                minWidth: 540,
+                borderCollapse: 'separate',
+                borderSpacing: 0,
+              }}
+            >
               <thead>
-                <tr>
-                  <th className="sticky left-0 bg-background text-left py-3 pr-4 font-medium text-text-muted" />
-                  <th className="py-3 px-3 sm:px-4 text-center">
-                    <div className="font-semibold text-blue-500">FinanceResearch</div>
-                    <div className="text-xs font-normal text-text-muted">From $0/mo</div>
+                <tr style={{ background: 'var(--mk-bg-warm)' }}>
+                  <th style={thStyle} />
+                  <th style={{ ...thStyle, color: 'var(--mk-accent)' }}>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>moatscape</div>
+                    <div
+                      className="mk-mono"
+                      style={{ fontSize: 11, color: 'var(--mk-ink-mute)', marginTop: 2 }}
+                    >
+                      FROM $0/MO
+                    </div>
                   </th>
-                  <th className="py-3 px-3 sm:px-4 text-center">
-                    <div className="font-semibold text-foreground">Bloomberg</div>
-                    <div className="text-xs font-normal text-text-muted">~$2,000/mo</div>
+                  <th style={thStyle}>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>Bloomberg</div>
+                    <div
+                      className="mk-mono"
+                      style={{ fontSize: 11, color: 'var(--mk-ink-mute)', marginTop: 2 }}
+                    >
+                      ~$2,000/MO
+                    </div>
                   </th>
-                  <th className="py-3 px-3 sm:px-4 text-center">
-                    <div className="font-semibold text-foreground">Free sites</div>
-                    <div className="text-xs font-normal text-text-muted">$0/mo</div>
+                  <th style={thStyle}>
+                    <div style={{ fontWeight: 700, fontSize: 15 }}>Free sites</div>
+                    <div
+                      className="mk-mono"
+                      style={{ fontSize: 11, color: 'var(--mk-ink-mute)', marginTop: 2 }}
+                    >
+                      $0/MO
+                    </div>
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {[
-                  ['40-year financials', true, true, false],
-                  ['Interactive charting', true, true, false],
-                  ['Analyst estimates', true, true, false],
-                  ['Ownership & insider data', true, true, false],
-                  ['AI stock briefs', true, false, false],
-                  ['DCF valuation models', true, true, false],
-                  ['Built for retail', true, false, true],
-                ].map(([label, a, b, c], i) => (
-                  <tr key={String(label)} className={i % 2 === 0 ? 'bg-background/40' : ''}>
-                    <td className="py-2.5 pr-4 pl-3 text-text-secondary">{label as string}</td>
-                    <td className="py-2.5 px-3 sm:px-4 text-center">
-                      <Cell on={a as boolean} accent />
+                {rows.map(([label, a, b, c], i) => (
+                  <tr
+                    key={label}
+                    style={{
+                      background: i % 2 ? 'var(--mk-paper-warm)' : 'var(--mk-paper)',
+                    }}
+                  >
+                    <td style={{ ...tdStyle, textAlign: 'left', fontWeight: 500 }}>{label}</td>
+                    <td style={tdStyle}>
+                      <Mark on={a} accent />
                     </td>
-                    <td className="py-2.5 px-3 sm:px-4 text-center">
-                      <Cell on={b as boolean} />
+                    <td style={tdStyle}>
+                      <Mark on={b} />
                     </td>
-                    <td className="py-2.5 px-3 sm:px-4 text-center">
-                      <Cell on={c as boolean} />
+                    <td style={tdStyle}>
+                      <Mark on={c} />
                     </td>
                   </tr>
                 ))}
@@ -237,201 +537,222 @@ export default async function HomePage() {
             </table>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
+  );
+}
 
-      {/* FAQ */}
-      <section className="px-4 py-14 sm:py-20 max-w-3xl mx-auto">
-        <div className="mb-8 sm:mb-10 text-center">
-          <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
-            Frequently asked questions
+function Mark({ on, accent = false }: { on: boolean; accent?: boolean }) {
+  if (on) {
+    return (
+      <span
+        style={{
+          display: 'inline-grid',
+          placeItems: 'center',
+          width: 22,
+          height: 22,
+          borderRadius: 999,
+          background: accent ? 'var(--mk-accent)' : 'var(--mk-ink-2)',
+          color: '#fff',
+        }}
+      >
+        <Check className="h-3 w-3" strokeWidth={2.8} />
+      </span>
+    );
+  }
+  return (
+    <span style={{ color: 'var(--mk-ink-mute)' }}>
+      <Minus className="h-3 w-3" style={{ display: 'inline' }} />
+    </span>
+  );
+}
+
+function Pricing({ isAuthenticated }: { isAuthenticated: boolean }) {
+  return (
+    <section id="pricing" style={{ padding: '100px 0', borderTop: '1px solid var(--mk-line)' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px' }}>
+        <div style={{ textAlign: 'center', maxWidth: 640, margin: '0 auto 36px' }}>
+          <div className="mk-eyebrow" style={{ marginBottom: 14 }}>
+            <span className="mk-dot" />
+            PRICING
+          </div>
+          <h2
+            className="mk-display"
+            style={{
+              fontSize: 'clamp(32px, 4vw, 48px)',
+              fontWeight: 700,
+              letterSpacing: '-0.03em',
+              margin: 0,
+              lineHeight: 1.05,
+            }}
+          >
+            Retail-grade pricing.
+          </h2>
+          <p
+            style={{
+              fontSize: 17,
+              color: 'var(--mk-ink-soft)',
+              marginTop: 14,
+              lineHeight: 1.5,
+            }}
+          >
+            Choose the plan that fits your research. Upgrade or downgrade anytime.
+          </p>
+          <MarketingPricingCards isAuthenticated={isAuthenticated} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FAQ() {
+  const items = [
+    {
+      q: 'Where does the data come from?',
+      a: 'We source data from Financial Modeling Prep (FMP), the same provider used by hedge funds and research desks. Fundamentals update with SEC filings; quotes are real-time during market hours.',
+    },
+    {
+      q: 'Is there really a free plan?',
+      a: 'Yes — the Free plan is permanent. It includes price charts, key metrics, 5 years of financials, news & filings, and a 2-metric chart panel. No credit card required to sign up.',
+    },
+    {
+      q: 'Can I cancel anytime?',
+      a: 'Absolutely. Cancel from your billing page in one click. You keep access until the end of your billing period — no questions asked.',
+    },
+    {
+      q: 'How many tickers are covered?',
+      a: 'Over 60,000 global tickers including the US, Canada, UK, and major European exchanges, plus ADRs and most major ETFs.',
+    },
+    {
+      q: 'How is this different from Yahoo Finance or Google Finance?',
+      a: 'Free sites cover the surface. Moatscape gives you 40-year history (vs. ~5), analyst estimates, ownership data, DCF/EPS models, AI briefs, and an interface built for actual research — not ads.',
+    },
+  ];
+  return (
+    <section
+      style={{
+        padding: '90px 0',
+        borderTop: '1px solid var(--mk-line)',
+        background: 'var(--mk-bg-warm)',
+      }}
+    >
+      <div style={{ maxWidth: 820, margin: '0 auto', padding: '0 28px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <div className="mk-eyebrow" style={{ marginBottom: 14 }}>
+            <span className="mk-dot" />
+            FAQ
+          </div>
+          <h2
+            className="mk-display"
+            style={{
+              fontSize: 'clamp(28px, 3.4vw, 40px)',
+              fontWeight: 700,
+              letterSpacing: '-0.03em',
+              margin: 0,
+            }}
+          >
+            Frequently asked questions.
           </h2>
         </div>
-        <div className="space-y-3">
-          {[
-            {
-              q: 'Where does the data come from?',
-              a: 'We source data from Financial Modeling Prep (FMP), the same provider used by hedge funds and research shops. Fundamentals update with SEC filings; quotes are real-time during market hours.',
-            },
-            {
-              q: 'Is there a free plan?',
-              a: 'Yes — our Free plan is permanent and includes price charts, key metrics, 5 years of financials, and a 2-metric chart panel. No credit card required to sign up.',
-            },
-            {
-              q: 'Can I cancel anytime?',
-              a: 'Absolutely. Cancel from your billing page in one click, no questions asked. You keep access until the end of your billing period.',
-            },
-            {
-              q: 'What tickers are covered?',
-              a: '60,000+ global tickers including US, Canadian, UK, and major European exchanges, plus ADRs and most major ETFs.',
-            },
-            {
-              q: 'How is this different from Yahoo Finance or Google Finance?',
-              a: 'Free sites cover the surface. We offer deeper history (40 years vs. ~5), analyst estimates, ownership data, DCF models, AI briefs, and an interface built for actual research — not ads.',
-            },
-          ].map((item) => (
-            <details
-              key={item.q}
-              className="group rounded-xl border border-border bg-surface px-5 py-4 open:bg-surface-hover transition-colors"
-            >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm sm:text-base font-medium text-foreground">
-                <span>{item.q}</span>
-                <span className="shrink-0 text-text-muted transition-transform group-open:rotate-45 text-xl leading-none">+</span>
+        <div>
+          {items.map((it, i) => (
+            <details className="mk-faq" key={it.q} open={i === 0}>
+              <summary>
+                <span>{it.q}</span>
+                <span className="mk-plus">+</span>
               </summary>
-              <p className="mt-3 text-sm text-text-secondary leading-relaxed">{item.a}</p>
+              <p className="mk-answer">{it.a}</p>
             </details>
           ))}
         </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="px-4 py-16 sm:py-24">
-        <div className="mx-auto max-w-2xl rounded-2xl border border-border bg-gradient-to-br from-blue-600/10 via-surface to-surface p-8 sm:p-12 text-center">
-          <h2 className="mb-3 text-2xl sm:text-4xl font-bold tracking-tight text-foreground">
-            Get your research terminal.
-            <br className="hidden sm:block" /> Free to start.
-          </h2>
-          <p className="mb-8 text-sm sm:text-base text-text-secondary">
-            Built for retail investors. No credit card, no sales call, no enterprise contract.
-          </p>
-          <Link
-            href="/sign-up"
-            className="inline-block w-full sm:w-auto rounded-lg bg-blue-600 px-8 py-3.5 text-sm font-semibold text-white hover:bg-blue-500 transition-colors shadow-lg shadow-blue-600/20"
-          >
-            Get my free account
-          </Link>
-          <p className="mt-4 text-xs text-text-muted">Takes under 30 seconds</p>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-border/60 px-4 py-8">
-        <div className="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-text-muted">
-          <span>© {new Date().getFullYear()} FinanceResearch · Data by Financial Modeling Prep</span>
-          <div className="flex items-center gap-4">
-            <Link href="/pricing" className="hover:text-foreground transition-colors">Pricing</Link>
-            <Link href="/sign-in" className="hover:text-foreground transition-colors">Sign in</Link>
-            <Link href="/sign-up" className="hover:text-foreground transition-colors">Sign up</Link>
-          </div>
-        </div>
-      </footer>
-
-      <StickyCta />
-    </main>
+      </div>
+    </section>
   );
 }
 
-function Cell({ on, accent = false }: { on: boolean; accent?: boolean }) {
-  if (on) {
-    return (
-      <Check
-        className={`mx-auto h-4 w-4 ${accent ? 'text-blue-500' : 'text-green-500'}`}
-      />
-    );
-  }
-  return <span className="text-text-muted">—</span>;
-}
-
-function ProductMockup() {
+function FinalCTA() {
   return (
-    <div className="rounded-xl border border-border bg-surface shadow-2xl shadow-blue-600/10 overflow-hidden">
-      {/* mock browser chrome */}
-      <div className="flex items-center gap-1.5 border-b border-border bg-background/60 px-3 py-2">
-        <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
-        <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/70" />
-        <span className="h-2.5 w-2.5 rounded-full bg-green-500/70" />
-        <span className="ml-3 text-[10px] text-text-muted truncate">financeresearch.app/stock/AAPL</span>
-      </div>
-
-      {/* Header row */}
-      <div className="p-4 sm:p-5 space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-md bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-400">A</div>
-              <div className="min-w-0">
-                <div className="font-semibold text-foreground text-sm truncate">Apple Inc.</div>
-                <div className="text-[10px] text-text-muted truncate">AAPL · NASDAQ</div>
-              </div>
+    <section style={{ padding: '90px 0' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px' }}>
+        <div
+          className="mk-grain"
+          style={{
+            background: 'var(--mk-ink)',
+            color: 'var(--mk-bg)',
+            borderRadius: 'var(--mk-radius-lg)',
+            padding: '64px 40px',
+            textAlign: 'center',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background:
+                'radial-gradient(80% 60% at 50% 0%, rgba(31,83,64,0.45), transparent 60%)',
+            }}
+          />
+          <div style={{ position: 'relative' }}>
+            <div className="mk-eyebrow" style={{ color: 'rgba(239,238,235,0.6)', marginBottom: 18 }}>
+              <span className="mk-dot" style={{ background: 'var(--mk-accent-2)' }} />
+              GET STARTED
             </div>
-          </div>
-          <div className="text-right shrink-0">
-            <div className="text-lg font-bold text-foreground tabular-nums">$228.52</div>
-            <div className="flex items-center justify-end gap-1 text-xs font-medium text-green-500 tabular-nums">
-              <TrendingUp className="h-3 w-3" />
-              +1.84 (+0.81%)
-            </div>
-          </div>
-        </div>
-
-        {/* Chart area */}
-        <div className="relative h-24 sm:h-28 rounded-lg bg-background/60 overflow-hidden">
-          <svg
-            viewBox="0 0 300 100"
-            preserveAspectRatio="none"
-            className="absolute inset-0 h-full w-full"
-          >
-            <defs>
-              <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path
-              d="M0,75 C20,70 35,55 55,50 C80,44 95,60 115,52 C140,42 160,30 185,35 C210,40 225,22 250,18 C275,14 290,24 300,20 L300,100 L0,100 Z"
-              fill="url(#g1)"
-            />
-            <path
-              d="M0,75 C20,70 35,55 55,50 C80,44 95,60 115,52 C140,42 160,30 185,35 C210,40 225,22 250,18 C275,14 290,24 300,20"
-              fill="none"
-              stroke="#3b82f6"
-              strokeWidth="1.8"
-            />
-          </svg>
-          <div className="absolute inset-x-0 bottom-0 flex items-center justify-between px-3 py-1.5 text-[9px] text-text-muted border-t border-border/50">
-            {['1D', '1M', '1Y', '5Y', 'Max'].map((r, i) => (
+            <h2
+              className="mk-display"
+              style={{
+                fontSize: 'clamp(34px, 4.4vw, 56px)',
+                fontWeight: 700,
+                letterSpacing: '-0.03em',
+                margin: '0 0 16px',
+                lineHeight: 1.05,
+              }}
+            >
+              Get your research terminal.
+              <br />
               <span
-                key={r}
-                className={i === 2 ? 'font-semibold text-blue-500' : ''}
+                style={{
+                  color: 'var(--mk-accent-2)',
+                  fontStyle: 'italic',
+                  fontWeight: 600,
+                }}
               >
-                {r}
+                Free to start.
               </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Key metrics */}
-        <div className="grid grid-cols-3 gap-2 text-center">
-          {[
-            { l: 'Market Cap', v: '$3.41T' },
-            { l: 'P/E', v: '34.8' },
-            { l: 'EPS', v: '$6.57' },
-          ].map((m) => (
-            <div key={m.l} className="rounded-md border border-border/60 bg-background/40 px-2 py-2">
-              <div className="text-[9px] text-text-muted uppercase tracking-wide">{m.l}</div>
-              <div className="text-xs font-semibold text-foreground tabular-nums">{m.v}</div>
+            </h2>
+            <p
+              style={{
+                fontSize: 17,
+                color: 'rgba(239,238,235,0.7)',
+                maxWidth: 520,
+                margin: '0 auto 28px',
+                lineHeight: 1.5,
+              }}
+            >
+              Built for retail investors. No credit card, no sales call, no enterprise contract.
+            </p>
+            <Link
+              href="/sign-up"
+              className="mk-btn mk-btn-accent"
+              style={{ padding: '16px 28px', fontSize: 15 }}
+            >
+              Get my free account <ArrowRight className="h-3.5 w-3.5" style={{ opacity: 0.7 }} />
+            </Link>
+            <div
+              style={{
+                marginTop: 14,
+                fontFamily: 'var(--font-dm-mono), "DM Mono", monospace',
+                fontSize: 11,
+                color: 'rgba(239,238,235,0.5)',
+              }}
+            >
+              Takes under 30 seconds
             </div>
-          ))}
-        </div>
-
-        {/* Mini revenue bars */}
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <div className="text-[10px] font-medium text-text-secondary uppercase tracking-wide">Revenue</div>
-            <div className="flex items-center gap-1 text-[10px] text-green-500">
-              <TrendingUp className="h-2.5 w-2.5" /> +8.1% YoY
-            </div>
-          </div>
-          <div className="flex items-end gap-1 h-12">
-            {[40, 48, 55, 52, 60, 65, 70, 75, 72, 82, 88, 100].map((h, i) => (
-              <div
-                key={i}
-                className="flex-1 rounded-sm bg-blue-500/70"
-                style={{ height: `${h}%` }}
-              />
-            ))}
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
+

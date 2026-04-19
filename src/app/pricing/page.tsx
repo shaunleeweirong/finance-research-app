@@ -1,24 +1,39 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { Check, X, ShieldCheck } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { UserMenu } from '@/components/auth/user-menu';
+import { ArrowRight, Check, ShieldCheck, X } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { MarketingNav } from '@/components/marketing/marketing-nav';
+import { MarketingFooter } from '@/components/marketing/marketing-footer';
 import { WaitlistForm } from '@/components/landing/waitlist-form';
 import type { User } from '@supabase/supabase-js';
 
 type Interval = 'monthly' | 'annual';
 
-const TIERS = [
+type Tier = {
+  name: string;
+  plan: 'free' | 'pro' | 'premium';
+  monthlyPrice: number;
+  annualPrice: number;
+  description: string;
+  cta: string;
+  highlighted?: boolean;
+  comingSoon?: boolean;
+  badge?: string;
+  note: string;
+  features: { name: string; included: boolean }[];
+};
+
+const TIERS: Tier[] = [
   {
     name: 'Free',
-    plan: 'free' as const,
+    plan: 'free',
     monthlyPrice: 0,
     annualPrice: 0,
-    description: 'Get started with essential financial data',
-    cta: 'Get Started',
-    highlighted: false,
+    description: 'Get started with essential research.',
+    cta: 'Get started',
+    note: 'Free forever · no card required',
     features: [
       { name: 'Overview tab', included: true },
       { name: 'Price chart (all ranges)', included: true },
@@ -37,12 +52,14 @@ const TIERS = [
   },
   {
     name: 'Pro',
-    plan: 'pro' as const,
+    plan: 'pro',
     monthlyPrice: 20,
     annualPrice: 16,
-    description: 'Advanced data for serious investors',
+    description: 'Advanced data for serious investors.',
     cta: 'Start Pro',
     highlighted: true,
+    badge: '★ MOST POPULAR',
+    note: 'Cancel anytime · 7-day refund',
     features: [
       { name: 'Everything in Free', included: true },
       { name: 'Financials (40 years)', included: true },
@@ -59,13 +76,14 @@ const TIERS = [
   },
   {
     name: 'Premium',
-    plan: 'premium' as const,
+    plan: 'premium',
     monthlyPrice: 35,
     annualPrice: 28,
-    description: 'Full platform access with AI features',
-    cta: 'Join Waitlist',
-    highlighted: false,
+    description: 'Full platform with AI features.',
+    cta: 'Join waitlist',
     comingSoon: true,
+    badge: 'COMING SOON',
+    note: 'Be first in line',
     features: [
       { name: 'Everything in Pro', included: true },
       { name: 'AI Copilot (200 queries/mo)', included: true },
@@ -103,7 +121,7 @@ const FAQS = [
 ];
 
 export default function PricingPage() {
-  const [interval, setInterval] = useState<Interval>('monthly');
+  const [interval, setBillingInterval] = useState<Interval>('monthly');
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -111,9 +129,9 @@ export default function PricingPage() {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
   }, []);
 
-  async function handleCheckout(plan: 'pro' | 'premium') {
+  async function handleCheckout(plan: 'pro') {
     if (!user) {
-      window.location.href = '/sign-up';
+      window.location.assign('/sign-up');
       return;
     }
     try {
@@ -124,7 +142,7 @@ export default function PricingPage() {
       });
       const data = await res.json();
       if (data.url) {
-        window.location.href = data.url;
+        window.location.assign(data.url);
       } else {
         console.error('Checkout error:', data);
         alert(data.error || 'Failed to create checkout session. Please try again.');
@@ -136,190 +154,457 @@ export default function PricingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background px-4 py-6 sm:py-8">
-      <div className="mx-auto max-w-6xl">
-        {/* Nav */}
-        <div className="flex items-center justify-between mb-10 sm:mb-16">
-          <Link href="/" className="text-base sm:text-lg font-bold text-foreground">FinanceResearch</Link>
-          {user ? <UserMenu /> : (
-            <div className="flex items-center gap-2 sm:gap-3">
-              <Link href="/sign-in" className="text-sm text-text-secondary hover:text-foreground transition-colors">Sign in</Link>
-              <Link href="/sign-up" className="rounded-lg bg-blue-600 px-3 sm:px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-500 transition-colors">Sign up</Link>
-            </div>
-          )}
-        </div>
+    <div className="marketing-theme" style={{ minHeight: '100vh' }}>
+      <MarketingNav isAuthenticated={!!user} />
 
-        {/* Header */}
-        <div className="text-center mb-10 sm:mb-12">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-3">Simple, transparent pricing</h1>
-          <p className="text-base sm:text-lg text-text-secondary max-w-lg mx-auto">
-            Choose the plan that fits your research needs. Upgrade or downgrade anytime.
+      {/* Header band */}
+      <section className="mk-grain" style={{ position: 'relative', overflow: 'hidden' }}>
+        <div
+          style={{
+            maxWidth: 1100,
+            margin: '0 auto',
+            padding: '72px 28px 36px',
+            textAlign: 'center',
+          }}
+        >
+          <div className="mk-eyebrow" style={{ marginBottom: 14 }}>
+            <span className="mk-dot" />
+            PRICING
+          </div>
+          <h1
+            className="mk-display"
+            style={{
+              fontSize: 'clamp(32px, 5.2vw, 64px)',
+              fontWeight: 700,
+              letterSpacing: '-0.035em',
+              margin: 0,
+              lineHeight: 1.02,
+            }}
+          >
+            Simple, transparent{' '}
+            <span style={{ color: 'var(--mk-accent)', fontStyle: 'italic', fontWeight: 600 }}>
+              pricing.
+            </span>
+          </h1>
+          <p
+            style={{
+              fontSize: 17,
+              color: 'var(--mk-ink-soft)',
+              marginTop: 14,
+              lineHeight: 1.5,
+              maxWidth: 560,
+              marginLeft: 'auto',
+              marginRight: 'auto',
+            }}
+          >
+            Choose the plan that fits your research. Upgrade or downgrade anytime.
           </p>
 
           {/* Billing toggle */}
-          <div className="mt-7 sm:mt-8 inline-flex items-center rounded-lg bg-surface p-1">
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: 4,
+              background: 'var(--mk-bg-warm)',
+              borderRadius: 999,
+              marginTop: 28,
+              border: '1px solid var(--mk-line)',
+            }}
+          >
             <button
-              onClick={() => setInterval('monthly')}
-              className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${interval === 'monthly' ? 'bg-surface-hover text-foreground' : 'text-text-secondary hover:text-foreground'}`}
+              type="button"
+              onClick={() => setBillingInterval('monthly')}
+              className="mk-grotesk"
+              style={pillTab(interval === 'monthly')}
             >
               Monthly
             </button>
             <button
-              onClick={() => setInterval('annual')}
-              className={`rounded-md px-3 sm:px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5 ${interval === 'annual' ? 'bg-surface-hover text-foreground' : 'text-text-secondary hover:text-foreground'}`}
+              type="button"
+              onClick={() => setBillingInterval('annual')}
+              className="mk-grotesk"
+              style={{
+                ...pillTab(interval === 'annual'),
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
             >
               Annual
-              <span className="rounded-full bg-green-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-green-500">
-                2 months free
+              <span
+                style={{
+                  background: 'var(--mk-accent-soft)',
+                  color: 'var(--mk-accent)',
+                  padding: '2px 8px',
+                  borderRadius: 999,
+                  fontSize: 10,
+                  fontFamily: 'var(--font-dm-mono), "DM Mono", monospace',
+                  letterSpacing: 0.04,
+                }}
+              >
+                2 MO FREE
               </span>
             </button>
           </div>
 
           {/* Trust row */}
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs text-text-muted">
-            <span className="inline-flex items-center gap-1">
-              <ShieldCheck className="h-3.5 w-3.5 text-green-500" /> Cancel anytime
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 16,
+              justifyContent: 'center',
+              marginTop: 16,
+              fontFamily: 'var(--font-dm-mono), "DM Mono", monospace',
+              fontSize: 11,
+              color: 'var(--mk-ink-mute)',
+            }}
+          >
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <ShieldCheck className="h-3.5 w-3.5" style={{ color: 'var(--mk-accent)' }} /> Cancel anytime
             </span>
-            <span className="inline-flex items-center gap-1">
-              <ShieldCheck className="h-3.5 w-3.5 text-green-500" /> 7-day money-back
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <ShieldCheck className="h-3.5 w-3.5" style={{ color: 'var(--mk-accent)' }} /> 7-day money-back
             </span>
-            <span className="inline-flex items-center gap-1">
-              <ShieldCheck className="h-3.5 w-3.5 text-green-500" /> Secure checkout by Stripe
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <ShieldCheck className="h-3.5 w-3.5" style={{ color: 'var(--mk-accent)' }} /> Stripe checkout
             </span>
           </div>
         </div>
+      </section>
 
-        {/* Pricing grid */}
-        <div className="grid gap-5 sm:gap-6 md:grid-cols-3 max-w-5xl mx-auto">
-          {TIERS.map((tier) => {
-            const price = interval === 'monthly' ? tier.monthlyPrice : tier.annualPrice;
-            const isPremium = 'comingSoon' in tier && tier.comingSoon;
-            return (
-              <div
-                key={tier.name}
-                className={`relative rounded-xl border p-5 sm:p-6 flex flex-col ${
-                  tier.highlighted
-                    ? 'border-blue-600 bg-surface shadow-lg shadow-blue-600/10'
-                    : 'border-border bg-surface'
-                }`}
-              >
-                {tier.highlighted && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-3 py-0.5 text-xs font-semibold text-white whitespace-nowrap">
-                    Most Popular
-                  </div>
-                )}
-                {isPremium && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-surface-hover border border-border px-3 py-0.5 text-xs font-semibold text-text-secondary whitespace-nowrap">
-                    Coming Soon
-                  </div>
-                )}
-                <div className="mb-5 sm:mb-6">
-                  <h3 className="text-lg font-semibold text-foreground">{tier.name}</h3>
-                  <p className="mt-1 text-sm text-text-secondary">{tier.description}</p>
-                  <div className="mt-4 flex items-baseline gap-1">
-                    <span className="text-4xl font-bold text-foreground">${price}</span>
-                    {price > 0 && <span className="text-sm text-text-secondary">/mo</span>}
-                  </div>
-                  {interval === 'annual' && price > 0 && (
-                    <p className="mt-1 text-xs text-text-muted">
-                      Billed annually (${price * 12}/yr · save ${(tier.monthlyPrice - tier.annualPrice) * 12})
-                    </p>
-                  )}
-                  {price === 0 && (
-                    <p className="mt-1 text-xs text-text-muted">Free forever · no card required</p>
-                  )}
-                </div>
-
-                {tier.plan === 'free' ? (
-                  <Link
-                    href={user ? '/' : '/sign-up'}
-                    className="mb-6 block rounded-lg border border-border bg-background px-4 py-2.5 text-center text-sm font-medium text-foreground hover:bg-surface-hover transition-colors"
-                  >
-                    {tier.cta}
-                  </Link>
-                ) : isPremium ? (
-                  <WaitlistForm />
-                ) : (
-                  <>
-                    <button
-                      onClick={() => handleCheckout(tier.plan)}
-                      className={`mb-1.5 w-full rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
-                        tier.highlighted
-                          ? 'bg-blue-600 text-white hover:bg-blue-500'
-                          : 'bg-foreground text-background hover:opacity-90'
-                      }`}
+      {/* Pricing grid */}
+      <section style={{ padding: '24px 0 72px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px' }}>
+          <div
+            className="mk-pricing-grid"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 18,
+              maxWidth: 1100,
+              margin: '0 auto',
+            }}
+          >
+            {TIERS.map((tier) => {
+              const price = interval === 'monthly' ? tier.monthlyPrice : tier.annualPrice;
+              const highlight = !!tier.highlighted;
+              const savings = (tier.monthlyPrice - tier.annualPrice) * 12;
+              return (
+                <div
+                  key={tier.name}
+                  style={{
+                    position: 'relative',
+                    background: highlight ? 'var(--mk-ink)' : 'var(--mk-paper-warm)',
+                    color: highlight ? 'var(--mk-bg)' : 'var(--mk-ink)',
+                    border: '1px solid ' + (highlight ? 'var(--mk-ink)' : 'var(--mk-line)'),
+                    borderRadius: 'var(--mk-radius-lg)',
+                    padding: '28px 26px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    boxShadow: highlight ? 'var(--mk-shadow-lg)' : 'none',
+                  }}
+                >
+                  {tier.badge && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: -12,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: highlight ? 'var(--mk-accent)' : 'var(--mk-bg-warm)',
+                        color: highlight ? '#fff' : 'var(--mk-ink-soft)',
+                        border: highlight ? 'none' : '1px solid var(--mk-line)',
+                        fontFamily: 'var(--font-dm-mono), "DM Mono", monospace',
+                        fontSize: 10,
+                        letterSpacing: 0.08,
+                        padding: '4px 12px',
+                        borderRadius: 999,
+                        whiteSpace: 'nowrap',
+                      }}
                     >
-                      {tier.cta}
-                    </button>
-                    <p className="mb-5 text-center text-[11px] text-text-muted">
-                      Cancel anytime · 7-day refund
-                    </p>
-                  </>
-                )}
-
-                <ul className="space-y-2.5 sm:space-y-3 flex-1">
-                  {tier.features.map((feature) => (
-                    <li key={feature.name} className="flex items-start gap-2.5 text-sm">
-                      {feature.included ? (
-                        <Check className="h-4 w-4 shrink-0 text-green-500 mt-0.5" />
-                      ) : (
-                        <X className="h-4 w-4 shrink-0 text-text-muted mt-0.5" />
-                      )}
-                      <span className={feature.included ? 'text-text-secondary' : 'text-text-muted'}>
-                        {feature.name}
+                      {tier.badge}
+                    </div>
+                  )}
+                  <h3
+                    className="mk-display"
+                    style={{
+                      fontSize: 22,
+                      fontWeight: 700,
+                      letterSpacing: '-0.02em',
+                      margin: '0 0 6px',
+                    }}
+                  >
+                    {tier.name}
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: 14,
+                      color: highlight ? 'rgba(239,238,235,0.7)' : 'var(--mk-ink-soft)',
+                      margin: '0 0 22px',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {tier.description}
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>
+                    <span
+                      className="mk-display mk-tabular"
+                      style={{ fontSize: 48, fontWeight: 700, letterSpacing: '-0.035em' }}
+                    >
+                      ${price}
+                    </span>
+                    {price > 0 && (
+                      <span
+                        style={{
+                          fontSize: 14,
+                          color: highlight ? 'rgba(239,238,235,0.65)' : 'var(--mk-ink-soft)',
+                        }}
+                      >
+                        /month
                       </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-dm-mono), "DM Mono", monospace',
+                      fontSize: 11,
+                      color: highlight ? 'rgba(239,238,235,0.55)' : 'var(--mk-ink-mute)',
+                      marginBottom: 22,
+                      minHeight: 16,
+                    }}
+                  >
+                    {price > 0 && interval === 'annual'
+                      ? `Billed $${price * 12}/yr · save $${savings}`
+                      : price === 0
+                        ? 'No card required'
+                        : 'Billed monthly'}
+                  </div>
 
-        {/* FAQ */}
-        <section className="mt-20 sm:mt-24 max-w-3xl mx-auto">
-          <div className="mb-8 sm:mb-10 text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-              Pricing questions
-            </h2>
-            <p className="mt-2 text-sm text-text-secondary">Everything you need to know before you upgrade.</p>
+                  {tier.plan === 'free' ? (
+                    <Link
+                      href={user ? '/' : '/sign-up'}
+                      className="mk-btn mk-btn-primary"
+                      style={{ width: '100%', padding: '14px', fontSize: 14 }}
+                    >
+                      {tier.cta} <ArrowRight className="h-3.5 w-3.5" style={{ opacity: 0.7 }} />
+                    </Link>
+                  ) : tier.comingSoon ? (
+                    <div style={{ marginBottom: 6 }}>
+                      <WaitlistForm />
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleCheckout('pro')}
+                      className={highlight ? 'mk-btn mk-btn-accent' : 'mk-btn mk-btn-primary'}
+                      style={{ width: '100%', padding: '14px', fontSize: 14 }}
+                    >
+                      {tier.cta} <ArrowRight className="h-3.5 w-3.5" style={{ opacity: 0.7 }} />
+                    </button>
+                  )}
+
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-dm-mono), "DM Mono", monospace',
+                      fontSize: 10,
+                      color: highlight ? 'rgba(239,238,235,0.55)' : 'var(--mk-ink-mute)',
+                      textAlign: 'center',
+                      marginTop: 8,
+                      marginBottom: 22,
+                    }}
+                  >
+                    {tier.note}
+                  </div>
+                  <div
+                    style={{
+                      height: 1,
+                      background: highlight ? 'rgba(239,238,235,0.12)' : 'var(--mk-line)',
+                      margin: '0 0 18px',
+                    }}
+                  />
+                  <ul
+                    style={{
+                      listStyle: 'none',
+                      padding: 0,
+                      margin: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 10,
+                      flex: 1,
+                    }}
+                  >
+                    {tier.features.map((feature) => (
+                      <li
+                        key={feature.name}
+                        style={{
+                          display: 'flex',
+                          gap: 10,
+                          alignItems: 'flex-start',
+                          fontSize: 13.5,
+                          lineHeight: 1.45,
+                        }}
+                      >
+                        {feature.included ? (
+                          <Check
+                            className="h-3.5 w-3.5"
+                            style={{
+                              color: highlight ? 'var(--mk-accent-2)' : 'var(--mk-accent)',
+                              marginTop: 3,
+                              flexShrink: 0,
+                            }}
+                          />
+                        ) : (
+                          <X
+                            className="h-3.5 w-3.5"
+                            style={{
+                              color: highlight ? 'rgba(239,238,235,0.3)' : 'var(--mk-ink-mute)',
+                              marginTop: 3,
+                              flexShrink: 0,
+                            }}
+                          />
+                        )}
+                        <span
+                          style={{
+                            color: feature.included
+                              ? highlight
+                                ? 'rgba(239,238,235,0.85)'
+                                : 'var(--mk-ink-2)'
+                              : highlight
+                                ? 'rgba(239,238,235,0.45)'
+                                : 'var(--mk-ink-mute)',
+                          }}
+                        >
+                          {feature.name}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
           </div>
-          <div className="space-y-3">
-            {FAQS.map((item) => (
-              <details
-                key={item.q}
-                className="group rounded-xl border border-border bg-surface px-5 py-4 open:bg-surface-hover transition-colors"
-              >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm sm:text-base font-medium text-foreground">
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section
+        style={{
+          padding: '90px 0',
+          borderTop: '1px solid var(--mk-line)',
+          background: 'var(--mk-bg-warm)',
+        }}
+      >
+        <div style={{ maxWidth: 820, margin: '0 auto', padding: '0 28px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 40 }}>
+            <div className="mk-eyebrow" style={{ marginBottom: 14 }}>
+              <span className="mk-dot" />
+              FAQ
+            </div>
+            <h2
+              className="mk-display"
+              style={{
+                fontSize: 'clamp(28px, 3.4vw, 40px)',
+                fontWeight: 700,
+                letterSpacing: '-0.03em',
+                margin: 0,
+              }}
+            >
+              Pricing questions.
+            </h2>
+          </div>
+          <div>
+            {FAQS.map((item, i) => (
+              <details className="mk-faq" key={item.q} open={i === 0}>
+                <summary>
                   <span>{item.q}</span>
-                  <span className="shrink-0 text-text-muted transition-transform group-open:rotate-45 text-xl leading-none">
-                    +
-                  </span>
+                  <span className="mk-plus">+</span>
                 </summary>
-                <p className="mt-3 text-sm text-text-secondary leading-relaxed">
-                  {item.a}
-                </p>
+                <p className="mk-answer">{item.a}</p>
               </details>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Bottom CTA */}
-        <section className="mt-16 sm:mt-20 mb-8 text-center">
-          <h2 className="mb-3 text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            Your research terminal, on your terms.
-          </h2>
-          <p className="mb-6 text-sm sm:text-base text-text-secondary max-w-md mx-auto">
-            Start free. Upgrade to Pro when you need the full terminal depth.
-          </p>
-          <Link
-            href="/sign-up"
-            className="inline-block w-full sm:w-auto rounded-lg bg-blue-600 px-8 py-3.5 text-sm font-semibold text-white hover:bg-blue-500 transition-colors shadow-lg shadow-blue-600/20"
+      {/* Bottom CTA */}
+      <section style={{ padding: '90px 0' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px' }}>
+          <div
+            className="mk-grain"
+            style={{
+              background: 'var(--mk-ink)',
+              color: 'var(--mk-bg)',
+              borderRadius: 'var(--mk-radius-lg)',
+              padding: '64px 40px',
+              textAlign: 'center',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
           >
-            Start free — no card required
-          </Link>
-        </section>
-      </div>
-    </main>
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background:
+                  'radial-gradient(80% 60% at 50% 0%, rgba(31,83,64,0.45), transparent 60%)',
+              }}
+            />
+            <div style={{ position: 'relative' }}>
+              <h2
+                className="mk-display"
+                style={{
+                  fontSize: 'clamp(28px, 4vw, 44px)',
+                  fontWeight: 700,
+                  letterSpacing: '-0.03em',
+                  margin: '0 0 14px',
+                  lineHeight: 1.1,
+                }}
+              >
+                Your research terminal,{' '}
+                <span style={{ color: 'var(--mk-accent-2)', fontStyle: 'italic', fontWeight: 600 }}>
+                  on your terms.
+                </span>
+              </h2>
+              <p
+                style={{
+                  fontSize: 16,
+                  color: 'rgba(239,238,235,0.7)',
+                  maxWidth: 480,
+                  margin: '0 auto 24px',
+                  lineHeight: 1.5,
+                }}
+              >
+                Start free. Upgrade to Pro when you need the full terminal depth.
+              </p>
+              <Link
+                href="/sign-up"
+                className="mk-btn mk-btn-accent"
+                style={{ padding: '15px 26px', fontSize: 14 }}
+              >
+                Start free — no card <ArrowRight className="h-3.5 w-3.5" style={{ opacity: 0.7 }} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <MarketingFooter />
+    </div>
   );
+}
+
+function pillTab(active: boolean): React.CSSProperties {
+  return {
+    padding: '8px 16px',
+    borderRadius: 999,
+    border: 'none',
+    background: active ? 'var(--mk-paper)' : 'transparent',
+    color: active ? 'var(--mk-ink)' : 'var(--mk-ink-soft)',
+    fontSize: 13,
+    fontWeight: 600,
+    boxShadow: active ? 'var(--mk-shadow-sm)' : 'none',
+    cursor: 'pointer',
+  };
 }

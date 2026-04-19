@@ -227,7 +227,7 @@ export function FinancialsView({ ticker, initialData, plan = 'free' }: Financial
       {!unlimitedMetrics && !isSegmentsTab && selectedMetrics.size >= FREE_MAX_CHART_METRICS && (
         <p className="text-xs text-text-muted text-center">
           Free plan: max {FREE_MAX_CHART_METRICS} chart metrics.{' '}
-          <a href="/pricing" className="text-blue-500 hover:underline">Upgrade for unlimited</a>
+          <a href="/pricing" className="text-emerald-500 hover:underline">Upgrade for unlimited</a>
         </p>
       )}
 

@@ -42,7 +42,7 @@ export function UserMenu() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-medium text-white hover:bg-blue-500 transition-colors"
+        className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-sm font-medium text-white hover:bg-emerald-500 transition-colors"
       >
         {user.user_metadata?.avatar_url ? (
           <img

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { UserMenu } from '@/components/auth/user-menu';
+import { AppNav } from '@/components/app/app-nav';
 import { Check, CreditCard, ArrowRight } from 'lucide-react';
 import type { Plan } from '@/lib/auth/plans';
 const PLAN_DETAILS: Record<Plan, { label: string; description: string }> = {
@@ -93,7 +93,7 @@ export function BillingContent() {
       <main className="min-h-screen bg-background px-4 py-8">
         <div className="mx-auto max-w-2xl text-center py-24">
           <h1 className="text-2xl font-bold text-foreground mb-4">Sign in to view billing</h1>
-          <Link href="/sign-in" className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-500 transition-colors">
+          <Link href="/sign-in" className="rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-emerald-500 transition-colors">
             Sign in
           </Link>
         </div>
@@ -116,14 +116,11 @@ export function BillingContent() {
   }
 
   return (
-    <main className="min-h-screen bg-background px-4 py-8">
-      <div className="mx-auto max-w-2xl">
-        <div className="flex items-center justify-between mb-12">
-          <Link href="/" className="text-lg font-bold text-foreground">FinanceResearch</Link>
-          <UserMenu />
-        </div>
-
-        <h1 className="text-3xl font-bold text-foreground mb-8">Billing</h1>
+    <>
+      <AppNav />
+      <main className="min-h-screen bg-background px-4 py-8">
+        <div className="mx-auto max-w-2xl">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground mb-8">Billing</h1>
 
         {success && (
           <div className="mb-6 rounded-lg border border-green-600/30 bg-green-600/10 px-4 py-3 flex items-center gap-2">
@@ -155,14 +152,14 @@ export function BillingContent() {
                 <p className="mt-4 text-sm text-text-muted">{subscriptionError}</p>
               ) : null}
             </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600/10">
-              <CreditCard className="h-5 w-5 text-blue-500" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-600/10">
+              <CreditCard className="h-5 w-5 text-emerald-500" />
             </div>
           </div>
         </div>
 
         {plan === 'free' ? (
-          <Link href="/pricing" className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-500 transition-colors w-full">
+          <Link href="/pricing" className="flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 text-sm font-medium text-white hover:bg-emerald-500 transition-colors w-full">
             Upgrade your plan
             <ArrowRight className="h-4 w-4" />
           </Link>
@@ -176,11 +173,12 @@ export function BillingContent() {
           </div>
         )}
 
-        <Link href="/pricing" className="mt-4 flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm text-text-secondary hover:bg-surface-hover hover:text-foreground transition-colors">
-          Compare plans
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
-      </div>
-    </main>
+          <Link href="/pricing" className="mt-4 flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm text-text-secondary hover:bg-surface-hover hover:text-foreground transition-colors">
+            Compare plans
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      </main>
+    </>
   );
 }

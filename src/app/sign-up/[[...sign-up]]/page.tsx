@@ -51,7 +51,7 @@ export default function SignUpPage() {
           <p className="text-sm text-text-secondary">
             We sent a confirmation link to <strong className="text-foreground">{email}</strong>. Click it to activate your account.
           </p>
-          <Link href="/sign-in" className="inline-block text-sm text-blue-500 hover:underline">
+          <Link href="/sign-in" className="inline-block text-sm text-emerald-500 hover:underline">
             Back to sign in
           </Link>
         </div>
@@ -63,7 +63,7 @@ export default function SignUpPage() {
     <main className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <Link href="/" className="text-2xl font-bold text-foreground">FinanceResearch</Link>
+          <Link href="/" className="text-2xl font-bold text-foreground">Moatscape</Link>
           <p className="mt-2 text-sm text-text-secondary">Create your account</p>
         </div>
 
@@ -101,7 +101,7 @@ export default function SignUpPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full rounded-lg border border-border bg-surface px-3 py-3 text-sm text-foreground placeholder:text-text-muted focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-border bg-surface px-3 py-3 text-sm text-foreground placeholder:text-text-muted focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               placeholder="you@example.com"
             />
           </div>
@@ -114,14 +114,14 @@ export default function SignUpPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-3 text-sm text-foreground placeholder:text-text-muted focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-border bg-surface px-3 py-3 text-sm text-foreground placeholder:text-text-muted focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               placeholder="At least 6 characters"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-500 transition-colors disabled:opacity-50"
+            className="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-medium text-white hover:bg-emerald-500 transition-colors disabled:opacity-50"
           >
             {loading ? 'Creating account...' : 'Sign up'}
           </button>
@@ -129,7 +129,7 @@ export default function SignUpPage() {
 
         <p className="text-center text-sm text-text-secondary">
           Already have an account?{' '}
-          <Link href="/sign-in" className="text-blue-500 hover:underline">Sign in</Link>
+          <Link href="/sign-in" className="text-emerald-500 hover:underline">Sign in</Link>
         </p>
       </div>
     </main>
