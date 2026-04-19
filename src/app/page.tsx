@@ -17,7 +17,6 @@ import {
   Calculator,
   Check,
   LineChart,
-  Minus,
   Sparkles,
   Users,
 } from 'lucide-react';
@@ -82,7 +81,7 @@ export default async function HomePage() {
         <Hero />
         <TrustBar />
         <Features />
-        <Comparison />
+        <ProductTour />
         <Pricing isAuthenticated={false} />
         <FAQ />
         <FinalCTA />
@@ -396,45 +395,44 @@ function Features() {
   );
 }
 
-function Comparison() {
-  const rows: Array<[string, boolean, boolean, boolean]> = [
-    ['40-year financial history', true, true, false],
-    ['Interactive multi-metric charts', true, true, false],
-    ['Analyst estimates & revisions', true, true, false],
-    ['Ownership & insider data', true, true, false],
-    ['AI-generated stock briefs', true, false, false],
-    ['DCF / EPS valuation models', true, true, false],
-    ['Built specifically for retail', true, false, true],
-    ['Costs less than a coffee/week', true, false, true],
+function ProductTour() {
+  const strips = [
+    {
+      tag: 'AI Briefs',
+      title: 'AI that actually reads filings.',
+      desc: 'Bull case, bear case, key developments — grounded in the 10-K, not Reddit. Cited sources, generated in seconds.',
+      image: '/screenshots/tour-ai-brief.png',
+      alt: 'Moatscape AI brief showing bull case, bear case, key developments and cited sources for Apple',
+    },
+    {
+      tag: 'Financials',
+      title: 'Forty years of data, one interface.',
+      desc: 'Income, balance sheet, cash flow, ratios. Chart any metric, toggle between 10Y / 20Y / 40Y, export any row.',
+      image: '/screenshots/tour-financials.png',
+      alt: 'Moatscape financials tab with a multi-metric chart and ten years of income statement data for Apple',
+    },
+    {
+      tag: 'Valuation',
+      title: 'Valuation, in the room.',
+      desc: 'DCF and EPS models with draggable assumptions. Flip growth and discount rates, watch fair value move live.',
+      image: '/screenshots/tour-dcf.png',
+      alt: 'Moatscape DCF valuation model with assumption sliders and a five-year free cash flow projection chart',
+    },
   ];
-  const thStyle: React.CSSProperties = {
-    padding: '18px 16px',
-    fontSize: 14,
-    color: 'var(--mk-ink)',
-    textAlign: 'center',
-    borderBottom: '1px solid var(--mk-line)',
-  };
-  const tdStyle: React.CSSProperties = {
-    padding: '14px 16px',
-    fontSize: 14,
-    color: 'var(--mk-ink-2)',
-    textAlign: 'center',
-    borderBottom: '1px solid var(--mk-line)',
-  };
   return (
     <section
-      id="compare"
+      id="tour"
       style={{
-        padding: '90px 0',
+        padding: '100px 0',
         borderTop: '1px solid var(--mk-line)',
         background: 'var(--mk-bg-warm)',
       }}
     >
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 28px' }}>
-        <div style={{ textAlign: 'center', maxWidth: 680, margin: '0 auto 50px' }}>
+        <div style={{ textAlign: 'center', maxWidth: 720, margin: '0 auto 72px' }}>
           <div className="mk-eyebrow" style={{ marginBottom: 14 }}>
             <span className="mk-dot" />
-            COMPARE
+            THE PRODUCT
           </div>
           <h2
             className="mk-display"
@@ -446,9 +444,16 @@ function Comparison() {
               lineHeight: 1.05,
             }}
           >
-            Deeper than Yahoo.
-            <br />
-            Cheaper than Bloomberg.
+            Built to make you{' '}
+            <span
+              style={{
+                color: 'var(--mk-accent)',
+                fontStyle: 'italic',
+                fontWeight: 600,
+              }}
+            >
+              a better researcher.
+            </span>
           </h2>
           <p
             style={{
@@ -458,115 +463,123 @@ function Comparison() {
               lineHeight: 1.5,
             }}
           >
-            A research terminal built for retail investors — not institutional budgets.
+            Three tools doing the heavy lifting. No context switching, no export chains.
           </p>
         </div>
-        <div
-          style={{
-            background: 'var(--mk-paper)',
-            border: '1px solid var(--mk-line)',
-            borderRadius: 'var(--mk-radius)',
-            padding: 0,
-            overflow: 'hidden',
-            maxWidth: 880,
-            margin: '0 auto',
-          }}
-        >
-          <div style={{ overflowX: 'auto' }}>
-            <table
-              style={{
-                width: '100%',
-                minWidth: 540,
-                borderCollapse: 'separate',
-                borderSpacing: 0,
-              }}
-            >
-              <thead>
-                <tr style={{ background: 'var(--mk-bg-warm)' }}>
-                  <th style={thStyle} />
-                  <th style={{ ...thStyle, color: 'var(--mk-accent)' }}>
-                    <div style={{ fontWeight: 700, fontSize: 15 }}>moatscape</div>
-                    <div
-                      className="mk-mono"
-                      style={{ fontSize: 11, color: 'var(--mk-ink-mute)', marginTop: 2 }}
-                    >
-                      FROM $0/MO
-                    </div>
-                  </th>
-                  <th style={thStyle}>
-                    <div style={{ fontWeight: 700, fontSize: 15 }}>Bloomberg</div>
-                    <div
-                      className="mk-mono"
-                      style={{ fontSize: 11, color: 'var(--mk-ink-mute)', marginTop: 2 }}
-                    >
-                      ~$2,000/MO
-                    </div>
-                  </th>
-                  <th style={thStyle}>
-                    <div style={{ fontWeight: 700, fontSize: 15 }}>Free sites</div>
-                    <div
-                      className="mk-mono"
-                      style={{ fontSize: 11, color: 'var(--mk-ink-mute)', marginTop: 2 }}
-                    >
-                      $0/MO
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map(([label, a, b, c], i) => (
-                  <tr
-                    key={label}
-                    style={{
-                      background: i % 2 ? 'var(--mk-paper-warm)' : 'var(--mk-paper)',
-                    }}
-                  >
-                    <td style={{ ...tdStyle, textAlign: 'left', fontWeight: 500 }}>{label}</td>
-                    <td style={tdStyle}>
-                      <Mark on={a} accent />
-                    </td>
-                    <td style={tdStyle}>
-                      <Mark on={b} />
-                    </td>
-                    <td style={tdStyle}>
-                      <Mark on={c} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 96 }}>
+          {strips.map((s, i) => (
+            <TourStrip key={s.tag} strip={s} flip={i % 2 === 1} />
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
-function Mark({ on, accent = false }: { on: boolean; accent?: boolean }) {
-  if (on) {
-    return (
+type Strip = {
+  tag: string;
+  title: string;
+  desc: string;
+  image: string;
+  alt: string;
+};
+
+function TourStrip({ strip, flip }: { strip: Strip; flip: boolean }) {
+  const copy = (
+    <div style={{ minWidth: 0 }}>
       <span
+        className="mk-pill mk-pill-accent"
+        style={{ marginBottom: 18, fontSize: 10 }}
+      >
+        <span className="mk-dot" /> {strip.tag.toUpperCase()}
+      </span>
+      <h3
+        className="mk-display"
         style={{
-          display: 'inline-grid',
-          placeItems: 'center',
-          width: 22,
-          height: 22,
-          borderRadius: 999,
-          background: accent ? 'var(--mk-accent)' : 'var(--mk-ink-2)',
-          color: '#fff',
+          fontSize: 'clamp(26px, 3vw, 36px)',
+          fontWeight: 700,
+          letterSpacing: '-0.025em',
+          margin: '0 0 14px',
+          lineHeight: 1.1,
         }}
       >
-        <Check className="h-3 w-3" strokeWidth={2.8} />
-      </span>
-    );
-  }
+        {strip.title.split('.')[0]}
+        {strip.title.includes('.') && (
+          <span style={{ color: 'var(--mk-accent)', fontStyle: 'italic', fontWeight: 600 }}>.</span>
+        )}
+      </h3>
+      <p
+        style={{
+          fontSize: 17,
+          color: 'var(--mk-ink-soft)',
+          lineHeight: 1.55,
+          margin: 0,
+          maxWidth: 440,
+        }}
+      >
+        {strip.desc}
+      </p>
+    </div>
+  );
+
+  const image = (
+    <div style={{ position: 'relative', minWidth: 0 }}>
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: '-30px',
+          background:
+            'radial-gradient(60% 60% at 60% 40%, rgba(31,83,64,0.16), transparent 70%)',
+          filter: 'blur(20px)',
+          zIndex: 0,
+        }}
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={strip.image}
+        alt={strip.alt}
+        loading="lazy"
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          width: '100%',
+          height: 'auto',
+          display: 'block',
+          borderRadius: 18,
+          border: '1px solid var(--mk-line)',
+          boxShadow: 'var(--mk-shadow-lg)',
+          background: 'var(--mk-paper)',
+        }}
+      />
+    </div>
+  );
+
   return (
-    <span style={{ color: 'var(--mk-ink-mute)' }}>
-      <Minus className="h-3 w-3" style={{ display: 'inline' }} />
-    </span>
+    <div
+      className="mk-hero-grid"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1.2fr',
+        gap: 64,
+        alignItems: 'center',
+      }}
+    >
+      {flip ? (
+        <>
+          {image}
+          {copy}
+        </>
+      ) : (
+        <>
+          {copy}
+          {image}
+        </>
+      )}
+    </div>
   );
 }
-
 function Pricing({ isAuthenticated }: { isAuthenticated: boolean }) {
   return (
     <section id="pricing" style={{ padding: '100px 0', borderTop: '1px solid var(--mk-line)' }}>

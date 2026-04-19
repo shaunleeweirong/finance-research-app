@@ -42,11 +42,11 @@ export function MarketingNav({ isAuthenticated }: { isAuthenticated: boolean }) 
             Features
           </Link>
           <Link
-            href="/#compare"
+            href="/#tour"
             className="mk-hide-sm"
             style={{ padding: '8px 14px', fontSize: 14, color: 'var(--mk-ink-soft)' }}
           >
-            Compare
+            Product
           </Link>
           <Link
             href="/pricing"
