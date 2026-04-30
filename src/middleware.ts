@@ -37,11 +37,24 @@ export async function middleware(request: NextRequest) {
   if (!user && !isPublicRoute(request.nextUrl.pathname)) {
     // API routes get 401 JSON instead of redirect
     if (request.nextUrl.pathname.startsWith('/api/')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      const apiResponse = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      // Forward any rotated session cookies so a refreshed-but-then-rejected
+      // request still leaves the browser with the latest cookies on retry.
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        apiResponse.cookies.set(cookie);
+      });
+      return apiResponse;
     }
     const url = request.nextUrl.clone();
     url.pathname = '/sign-in';
-    return NextResponse.redirect(url);
+    const redirectResponse = NextResponse.redirect(url);
+    // Critical: copy refreshed Supabase cookies onto the redirect response.
+    // Without this, an in-flight token refresh is dropped and the user is
+    // permanently logged out even though their refresh token was valid.
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie);
+    });
+    return redirectResponse;
   }
 
   return supabaseResponse;

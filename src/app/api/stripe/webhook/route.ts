@@ -40,6 +40,30 @@ export async function POST(req: NextRequest) {
 
   const supabase = await createServiceClient();
 
+  // Idempotency guard. Stripe guarantees at-least-once delivery; record the
+  // event ID first and short-circuit if we have already processed it. The
+  // INSERT is the source of truth — if it succeeds, we own this delivery; if
+  // it fails with 23505 (unique violation) the event was processed before.
+  const { error: idempotencyError } = await supabase
+    .from('processed_webhook_events')
+    .insert({ stripe_event_id: event.id, event_type: event.type });
+
+  if (idempotencyError) {
+    if (idempotencyError.code === '23505') {
+      // Duplicate delivery — acknowledge to stop Stripe from retrying.
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    // Any other DB error (table missing, network) is a genuine failure.
+    // Returning 500 lets Stripe retry once the underlying issue is fixed.
+    console.error('Webhook idempotency record failed:', JSON.stringify({
+      eventId: event.id,
+      eventType: event.type,
+      code: idempotencyError.code,
+      message: idempotencyError.message,
+    }));
+    return NextResponse.json({ error: 'Idempotency check failed' }, { status: 500 });
+  }
+
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object;
