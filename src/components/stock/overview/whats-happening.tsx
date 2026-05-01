@@ -11,6 +11,7 @@ import {
   Megaphone,
   Swords,
   Eye,
+  Scale,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -24,6 +25,7 @@ interface SummaryData {
   dateRange: string;
   bullCase: string[];
   bearCase: string[];
+  debates: string[];
   keyDevelopments: string[];
   managementSignals: string[];
   competitiveLandscape: string[];
@@ -139,6 +141,7 @@ export function WhatsHappening({ ticker, companyName }: { ticker: string; compan
           <div className="mt-4 space-y-4">
             <Section icon={TrendingUp} label="Bull Case" items={data.bullCase} color="text-emerald-500" />
             <Section icon={TrendingDown} label="Bear Case" items={data.bearCase} color="text-red-500" />
+            <Section icon={Scale} label="Debates" items={data.debates} color="text-cyan-500" />
             <Section icon={Newspaper} label="Key Developments" items={data.keyDevelopments} color="text-blue-500" />
             <Section icon={Megaphone} label="Management Signals" items={data.managementSignals} color="text-violet-500" />
             <Section icon={Swords} label="Competitive Landscape" items={data.competitiveLandscape} color="text-orange-500" />
