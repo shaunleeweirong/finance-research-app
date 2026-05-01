@@ -29,7 +29,7 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const userPlan = await getUserPlan(user.id);
+  const userPlan = await getUserPlan(user.id, supabase);
   if (!canAccess(userPlan, 'tab:estimates')) {
     return NextResponse.json({ error: 'Upgrade required' }, { status: 403 });
   }

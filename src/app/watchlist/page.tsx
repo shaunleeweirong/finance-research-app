@@ -20,7 +20,7 @@ export default async function WatchlistPage() {
     return null;
   }
 
-  const userPlan = await getUserPlan(user.id);
+  const userPlan = await getUserPlan(user.id, supabase);
   if (!canAccess(userPlan, 'watchlist:basic')) {
     return (
       <>

@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const userPlan = await getUserPlan(user.id);
+  const userPlan = await getUserPlan(user.id, supabase);
   if (!canAccess(userPlan, 'watchlist:basic')) {
     return NextResponse.json({ error: 'Upgrade required' }, { status: 403 });
   }
