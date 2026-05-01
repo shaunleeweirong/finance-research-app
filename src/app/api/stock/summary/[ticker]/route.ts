@@ -163,61 +163,81 @@ export async function GET(
     }
 
     const today = new Date();
-    const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const dateRange = `${monthAgo.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+    // 90-day window — fundamentals move slower than sentiment, so a wider net
+    // catches genuine business events (product cycles, regulatory rulings,
+    // customer wins) that a 30-day window often misses.
+    const windowStart = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+    const dateRange = `${windowStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
 
-    const prompt = `Write a structured stock research brief for ${companyName} (ticker: ${ticker}) covering ${dateRange}.
+    const prompt = `Write a structured BUSINESS brief for ${companyName} (ticker: ${ticker}) covering ${dateRange}.
 
-Search for recent analyst opinions, investment theses, news analysis, and commentary about this company — not just financial data or price history.
+This is a business analysis — not a stock-market analysis. Write about what is happening to the COMPANY: its products, customers, competitors, unit economics, regulatory environment, supply chain, capital allocation, and leadership. Do NOT write about the stock.
 
-Use this EXACT format. Only include a section if you have concrete, sourced information. If a section would require speculation, omit it entirely by writing NONE after the header.
+Anchor every BULL/BEAR bullet in DURABLE BUSINESS FUNDAMENTALS — the moat, unit economics, structural advantages or risks — and use 90-day developments to show how those fundamentals are advancing or being threatened. Recent events matter only when they materially change a durable business factor.
 
-TITLE: [Short, compelling headline about the business narrative — max 12 words]
+HARD EXCLUSIONS — never mention any of the following:
+- Stock price, share price, price moves, percentage gains/losses, "stock bounced/dropped/rebounded"
+- Market capitalisation, "market value wipeout", enterprise value changes
+- Analyst ratings ("Buy", "Hold", "Strong Buy"), number of analysts, consensus ratings
+- Price targets ("targets up to $X", "trimmed price target", "implies X% upside")
+- Whether investors are "bullish" or "bearish" — only what is happening to the business
+- Index moves, geopolitical-driven market reactions, "tech sentiment"
+
+If your search returns only price-action or rating coverage, write NONE for that section.
+DO NOT paraphrase a price-action story into business language — omit it.
+
+Use this EXACT format. Section headers must match exactly so the parser can read them:
+
+TITLE: [Business-focused headline — what is happening to the company. Max 12 words. Do not reference stock, price, or sentiment.]
 
 BULL CASE:
-- [Explain WHY investors are optimistic — the narrative, thesis, or trend driving conviction, not just a number]
-- [Another reason for optimism with context on why it matters]
-- [Third bullish point if available]
+- [DURABLE ADVANTAGE — required: a timeless business strength: the moat, unit economics structurally improving, a customer cohort with high LTV, a network effect compounding, a regulatory advantage. Explain WHY it endures.]
+- [RECENT DEVELOPMENT — required: a 90-day event (product launch, customer win, M&A, regulatory ruling, executive change) that materially STRENGTHENS the durable advantage above. Tie it back to the thesis explicitly.]
+- [Optional third bullet — either a second durable advantage or another recent development.]
 
 BEAR CASE:
-- [Explain WHY investors are worried — the concern, risk, or trend causing caution, not just a metric]
-- [Another reason for caution with context on why it matters]
-- [Third bearish point if available]
+- [DURABLE RISK — required: a timeless business risk: customer concentration, regulatory exposure, eroding unit economics, a technology shift threatening the moat, supply-chain dependency. Explain WHY it endures.]
+- [RECENT DEVELOPMENT — required: a 90-day event that materially DEEPENS the durable risk above. Tie it back to the thesis explicitly.]
+- [Optional third bullet — either a second durable risk or another recent development.]
 
 KEY DEVELOPMENTS:
-- [Specific product launch, partnership, M&A, earnings result, or regulatory event with date]
-- [Another concrete development]
+- [A specific business event with date: product launch, customer win/loss, M&A, regulatory ruling, factory opening, executive change, contract signing.]
+- [Another concrete business event.]
 
 MANAGEMENT SIGNALS:
-- [Recent earnings call quote, guidance change, buyback announcement, or insider buy/sell]
-- [Another management action if available]
+- [What management said or did about the BUSINESS: capital allocation choice, capex commitment, hiring direction, segment reorganisation, strategic pivot. Quote sparingly and accurately. Report guidance as a business-direction signal, NOT as a stock-impact event.]
+- [Another management signal if available.]
 
 COMPETITIVE LANDSCAPE:
-- [How peers are performing, market share shift, or emerging competitive threat]
+- [A peer's product launch, a market-share shift, an emerging competitor or substitute, a customer choosing this company over a rival or vice versa. Frame as competitive dynamics, not equity-market commentary.]
 
 WHAT TO WATCH:
-- [Upcoming earnings date, product launch, or regulatory decision with date]
-- [Key business metric or threshold to monitor]
+- [An upcoming business milestone with date: product launch, regulatory decision, contract renewal, capacity coming online, geographic expansion.]
+- [A business KPI to monitor: customer count, take rate, gross margin trajectory, churn, capacity utilisation — not stock-related metrics.]
 
-IMPORTANT — write every bullet as a NARRATIVE explaining WHY something matters, not as a data point.
+EXAMPLES of BAD writing (do NOT write any of these — these are exactly the kinds of bullets that have been rejected before):
+- "67 analysts cover the stock with no Sell ratings, implying 44% upside" — banned: ratings + upside
+- "AI release sparked a 6.6% stock bounce signaling investor enthusiasm" — banned: price action
+- "Wells Fargo trimmed price target on tariff risk" — banned: price target
+- "$300B market value wipeout" — banned: market cap move
+- "Strong Buy consensus from 45 analysts with targets up to $1015" — banned: ratings + targets
+- "Q4 EPS beat estimates by 8%, revenue by 2.4%" — banned: bare number without business context
+- "Iran ceasefire announcement boosted shares 6.7%" — banned: price reaction to macro news
 
-BAD example (do NOT write like this):
-- "Q1 revenue was $173B, up 14% YoY"
-- "EPS of $1.95 missed estimates of $1.98"
-- "Operating income projected at $16.5-21.5 billion"
-
-GOOD example (write like this):
-- "Amazon's custom AI chip business is rapidly gaining enterprise adoption, potentially reducing dependence on Nvidia and improving cloud margins long-term"
-- "Investors worry that rising capex on AI infrastructure could compress margins before revenue catches up, echoing concerns from prior AWS buildout cycles"
+EXAMPLES of GOOD writing (write like this — durable factor + recent event tied together):
+- "Meta's Reels ad load is approaching parity with Feed for the first time, structurally shifting incremental ad inventory toward short-form and reducing exposure to declining long-form engagement among under-30 users."
+- "The California addiction-liability ruling against Meta establishes a negligence standard that could force product redesign of recommendation systems used across Instagram and Facebook, raising compliance cost on the company's most engaged surfaces."
+- "Capex guidance of $115-135B for 2026 — nearly double prior year — signals management is committing to in-house AI training capacity rather than renting frontier compute, reshaping the cost structure of the family-of-apps segment for the next 3-5 years."
+- "Apple's launch of on-device generative features without a Meta partnership reduces Meta's reach into the iOS LLM-assistant surface area, widening dependence on its own apps for distribution."
 
 Rules:
-- Every bullet must explain a perspective, thesis, or narrative — not just state a number
-- Do NOT simply restate financial metrics — explain why they matter and what they signal
-- Never fabricate quotes, analyst names, or price targets you cannot verify
-- If you have no sourced information for a section, write NONE (do not speculate)
-- Remove inline citation markers like [1][2] from the text
-- Keep each bullet to 1-2 sentences max
-- Do not include a BODY section`;
+- Every BULL/BEAR section must contain at least one DURABLE bullet anchored in timeless business fundamentals AND at least one RECENT bullet tying a 90-day event back to that durable factor.
+- Numbers are allowed only when they describe the BUSINESS (revenue, capex, units sold, customers, capacity) — never when they describe the STOCK.
+- Never fabricate quotes, executives, customers, or product names you cannot verify.
+- If you have no sourced BUSINESS information for a section, write NONE (do not speculate, do not paraphrase price commentary).
+- Remove inline citation markers like [1][2] from the text.
+- Keep each bullet to 1-2 sentences max.
+- No BODY section, no preamble, no closing remarks.`;
 
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -231,7 +251,7 @@ Rules:
           {
             role: 'system',
             content:
-              'You are a senior equity research analyst writing investment briefs. Your job is to explain the narrative and thesis around a stock — why investors are bullish or bearish, what trends matter, and what to watch. Do NOT just restate financial numbers. Explain what they mean and why they matter. Search for analyst commentary, opinion pieces, and investment analysis — not just earnings data. Omit sections where you lack concrete information. Never include inline citation markers like [1] or [2].',
+              'You are a senior equity research analyst writing a BUSINESS brief — not a stock-market brief. Your job is to explain what is happening to the company AS A BUSINESS: its products, customers, competitive position, unit economics, regulatory environment, supply chain, leadership, and capital allocation. Anchor every section in durable business fundamentals — the moat, the unit economics, structural advantages — and layer recent developments on top to show how those fundamentals are advancing or being threatened. Search earnings-call transcripts, regulatory filings, and product/customer journalism — not market commentary. Do NOT write about stock price, share price moves, market cap changes, analyst ratings, price targets, upside/downside percentages, or who is bullish/bearish on the stock. If a source only discusses price action or ratings, ignore it. Omit any section where you lack concrete sourced business information. Never include inline citation markers like [1] or [2].',
           },
           { role: 'user', content: prompt },
         ],
