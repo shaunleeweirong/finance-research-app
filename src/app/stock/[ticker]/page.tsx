@@ -15,7 +15,7 @@ import { CompanyHeader } from '@/components/stock/company-header';
 import { StockContent } from '@/components/stock/stock-content';
 import { WatchlistToggleButton } from '@/components/watchlist/watchlist-toggle-button';
 import { getDateRangeForPeriod } from '@/lib/utils/chart-helpers';
-import { canAccess, type Plan } from '@/lib/auth/plans';
+import { canAccess, toPlan, type Plan } from '@/lib/auth/plans';
 import type { FMPQuote } from '@/lib/fmp/types';
 import Link from 'next/link';
 
@@ -44,7 +44,7 @@ export default async function StockPage({
       .select('plan')
       .eq('id', user.id)
       .single();
-    userPlan = (profile?.plan as Plan) || 'free';
+    userPlan = toPlan(profile?.plan);
   }
 
   const canManageWatchlist = canAccess(userPlan, 'watchlist:basic');

@@ -36,5 +36,17 @@ export function getRequiredPlan(feature: string): Plan {
   return FEATURE_ACCESS[feature] ?? 'free';
 }
 
+/**
+ * Runtime-validated coercion of an arbitrary value to a Plan.
+ * Replaces unsafe `(value as Plan)` casts at DB-read boundaries — if the
+ * database ever returns an unknown plan string (e.g. a future plan added
+ * to the schema before the type is updated), we degrade safely to 'free'
+ * instead of letting an invalid plan flow through the access matrix.
+ */
+export function toPlan(value: unknown): Plan {
+  if (value === 'pro' || value === 'premium' || value === 'free') return value;
+  return 'free';
+}
+
 export const FREE_MAX_CHART_METRICS = 2;
 export const FREE_MAX_DEPTH = 10;

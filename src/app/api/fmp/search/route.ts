@@ -18,7 +18,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(results);
   } catch (error) {
     if (error instanceof FMPError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      // Don't echo FMPError.message to the browser — it can reveal the
+      // upstream provider, the failing endpoint, or the env-var-missing
+      // condition. Log internally; surface a generic status to the caller.
+      console.error('fmp_search_error', JSON.stringify({
+        endpoint: error.endpoint,
+        status: error.status,
+        message: error.message,
+      }));
+      const clientStatus = error.status === 429 ? 429 : 502;
+      const clientMessage = error.status === 429 ? 'Search temporarily rate-limited' : 'Search unavailable';
+      return NextResponse.json({ error: clientMessage }, { status: clientStatus });
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

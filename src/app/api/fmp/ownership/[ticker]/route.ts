@@ -36,7 +36,15 @@ export async function GET(
     return NextResponse.json({ holders, insiderTrades });
   } catch (error) {
     if (error instanceof FMPError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      console.error('fmp_ownership_error', JSON.stringify({
+        ticker,
+        endpoint: error.endpoint,
+        status: error.status,
+        message: error.message,
+      }));
+      const clientStatus = error.status === 429 ? 429 : 502;
+      const clientMessage = error.status === 429 ? 'Data temporarily rate-limited' : 'Data unavailable';
+      return NextResponse.json({ error: clientMessage }, { status: clientStatus });
     }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

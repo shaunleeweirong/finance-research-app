@@ -27,16 +27,22 @@ async function fmpFetch<T>(
     Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
   }
 
-  // Exponential backoff for rate limiting (3 retries: 1s, 2s, 4s)
+  // Bounded retry budget for 429s. The previous 3-retry exponential
+  // (1s/2s/4s = up to 7s) could starve Vercel's 10s function timeout when
+  // FMP rate-limited, leaving no headroom for the actual request. One retry
+  // at 500ms is enough to ride out a transient burst without timing out.
   let lastError: Error | null = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  const MAX_ATTEMPTS = 2;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     const response = await fetch(url.toString(), {
       next: revalidate !== undefined ? { revalidate } : undefined,
     });
 
     if (response.status === 429) {
       lastError = new FMPError(429, 'Rate limited by FMP API', endpoint);
-      await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
+      // Last attempt: don't sleep — just throw immediately.
+      if (attempt === MAX_ATTEMPTS - 1) break;
+      await new Promise(r => setTimeout(r, 500));
       continue;
     }
 

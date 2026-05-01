@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
 
@@ -16,7 +16,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data: profile } = await supabase
+  // Read billing-sensitive profile fields via the service-role client to
+  // match how the checkout route reads them. Defense-in-depth: a future
+  // RLS regression on user_profiles can't surface another user's
+  // stripe_customer_id, since the lookup is explicitly scoped by user.id.
+  const serviceClient = await createServiceClient();
+  const { data: profile } = await serviceClient
     .from('user_profiles')
     .select('stripe_customer_id')
     .eq('id', user.id)
