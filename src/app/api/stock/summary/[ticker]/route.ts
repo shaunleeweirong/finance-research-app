@@ -116,7 +116,7 @@ export async function GET(
   // Only premium users can bypass the 7-day cache; prevents free users from
   // forcing paid Perplexity calls by spamming `?refresh=true`.
   const refreshRequested = new URL(_request.url).searchParams.get('refresh') === 'true';
-  const userPlan = await getUserPlan(user.id);
+  const userPlan = await getUserPlan(user.id, userClient);
   const forceRefresh = refreshRequested && canAccess(userPlan, 'ai:copilot');
 
   const rawName = new URL(_request.url).searchParams.get('name') ?? ticker;

@@ -1,5 +1,5 @@
 export function formatCurrency(value: number | null, decimals: number = 2): string {
-  if (value === null || value === undefined || isNaN(value)) return 'N/A';
+  if (value === null || value === undefined || !Number.isFinite(value)) return 'N/A';
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -9,12 +9,12 @@ export function formatCurrency(value: number | null, decimals: number = 2): stri
 }
 
 export function formatPercent(value: number | null, decimals: number = 2): string {
-  if (value === null || value === undefined || isNaN(value)) return 'N/A';
+  if (value === null || value === undefined || !Number.isFinite(value)) return 'N/A';
   return `${value >= 0 ? '+' : ''}${value.toFixed(decimals)}%`;
 }
 
 export function formatLargeNumber(value: number | null): string {
-  if (value === null || value === undefined || isNaN(value)) return 'N/A';
+  if (value === null || value === undefined || !Number.isFinite(value)) return 'N/A';
   const abs = Math.abs(value);
   const sign = value < 0 ? '-' : '';
   if (abs >= 1e12) return `${sign}$${(abs / 1e12).toFixed(2)}T`;
@@ -25,7 +25,7 @@ export function formatLargeNumber(value: number | null): string {
 }
 
 export function formatNumber(value: number | null, decimals: number = 0): string {
-  if (value === null || value === undefined || isNaN(value)) return 'N/A';
+  if (value === null || value === undefined || !Number.isFinite(value)) return 'N/A';
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
@@ -33,7 +33,7 @@ export function formatNumber(value: number | null, decimals: number = 0): string
 }
 
 export function formatCompactNumber(value: number | null): string {
-  if (value === null || value === undefined || isNaN(value)) return 'N/A';
+  if (value === null || value === undefined || !Number.isFinite(value)) return 'N/A';
   const abs = Math.abs(value);
   const sign = value < 0 ? '-' : '';
   if (abs >= 1e12) return `${sign}${(abs / 1e12).toFixed(2)}T`;
@@ -44,7 +44,7 @@ export function formatCompactNumber(value: number | null): string {
 }
 
 export function formatParenthetical(value: number | null): string {
-  if (value === null || value === undefined || isNaN(value)) return 'N/A';
+  if (value === null || value === undefined || !Number.isFinite(value)) return 'N/A';
   if (value < 0) return `(${formatNumber(Math.abs(value))})`;
   return formatNumber(value);
 }
@@ -74,7 +74,7 @@ export function formatInUnit(
   withCurrency: boolean = true,
   withSuffix: boolean = false,
 ): string {
-  if (value === null || value === undefined || isNaN(value)) return 'N/A';
+  if (value === null || value === undefined || !Number.isFinite(value)) return 'N/A';
   const divisor = unit === 'B' ? 1e9 : unit === 'M' ? 1e6 : 1e3;
   const divided = value / divisor;
   const sign = divided < 0 ? '-' : '';

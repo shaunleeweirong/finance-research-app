@@ -25,7 +25,9 @@ export function SearchBar({ size = 'default' }: { size?: 'default' | 'large' }) 
   const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Debounced search
+  // Debounced search with abort-on-cleanup to prevent stale-response races.
+  // Without AbortController, a slow response for "APP" could overwrite a
+  // newer fast response for "APPL", showing wrong results in the dropdown.
   useEffect(() => {
     if (query.length < 1) {
       setResults([]);
@@ -33,23 +35,36 @@ export function SearchBar({ size = 'default' }: { size?: 'default' | 'large' }) 
       return;
     }
 
+    const controller = new AbortController();
     const timer = setTimeout(async () => {
       setIsLoading(true);
       try {
-        const res = await fetch(`/api/fmp/search?q=${encodeURIComponent(query)}`);
+        const res = await fetch(`/api/fmp/search?q=${encodeURIComponent(query)}`, {
+          signal: controller.signal,
+        });
         if (res.ok) {
           const data: FMPSearchResult[] = await res.json();
           setResults(data);
           setIsOpen(true);
         }
-      } catch {
-        setResults([]);
+      } catch (err) {
+        // Aborted fetches throw — ignore those, surface other errors as empty.
+        if (!(err instanceof DOMException && err.name === 'AbortError')) {
+          setResults([]);
+        }
       } finally {
-        setIsLoading(false);
+        // Don't toggle loading off if the request was superseded — the next
+        // keystroke's effect already started its own loading cycle.
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
       }
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [query]);
 
   // Close on click outside

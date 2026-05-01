@@ -7,6 +7,26 @@ import { CreditCard, LogOut, Star } from 'lucide-react';
 import Link from 'next/link';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
+// Allowlist of OAuth provider hostnames whose avatar URLs we trust to render
+// in an <img> tag. user_metadata.avatar_url comes directly from the provider
+// and could otherwise be any URL — domain validation prevents arbitrary
+// outbound image requests / tracking pixels if an attacker ever influences
+// the metadata payload.
+const ALLOWED_AVATAR_HOSTS = new Set([
+  'lh3.googleusercontent.com',
+  'avatars.githubusercontent.com',
+]);
+
+function isAllowedAvatarUrl(url: unknown): url is string {
+  if (typeof url !== 'string') return false;
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' && ALLOWED_AVATAR_HOSTS.has(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
 export function UserMenu() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [open, setOpen] = useState(false);
@@ -37,6 +57,9 @@ export function UserMenu() {
   if (!user) return null;
 
   const initials = (user.email ?? '?')[0].toUpperCase();
+  const avatarUrl = isAllowedAvatarUrl(user.user_metadata?.avatar_url)
+    ? user.user_metadata.avatar_url
+    : null;
 
   return (
     <div ref={ref} className="relative">
@@ -44,11 +67,13 @@ export function UserMenu() {
         onClick={() => setOpen(!open)}
         className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-sm font-medium text-white hover:bg-emerald-500 transition-colors"
       >
-        {user.user_metadata?.avatar_url ? (
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- using raw <img> intentionally to avoid widening next.config.ts remotePatterns to OAuth provider domains; URL is validated against ALLOWED_AVATAR_HOSTS above
           <img
-            src={user.user_metadata.avatar_url}
+            src={avatarUrl}
             alt=""
             className="h-8 w-8 rounded-full"
+            referrerPolicy="no-referrer"
           />
         ) : (
           initials

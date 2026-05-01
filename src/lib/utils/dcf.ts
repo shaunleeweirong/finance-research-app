@@ -33,10 +33,20 @@ export interface DCFResult {
 
 /**
  * Run a full DCF valuation.
+ *
+ * Returns null when inputs are not valuation-meaningful — specifically when
+ * the discount rate does not exceed the terminal growth rate (Gordon Growth
+ * Model collapses) or when shares outstanding is non-positive. Callers are
+ * expected to render a "model unavailable" state in those cases. The
+ * DCFCalculator UI already guards before calling, so this is defense-in-depth.
  */
-export function calculateDCF(inputs: DCFInputs): DCFResult {
+export function calculateDCF(inputs: DCFInputs): DCFResult | null {
   const { currentFCF, sharesOutstanding, currentPrice, growthRates, terminalGrowthRate, discountRate } = inputs;
   const years = growthRates.length;
+
+  // Hard preconditions for a meaningful valuation
+  if (discountRate <= terminalGrowthRate) return null;
+  if (sharesOutstanding <= 0) return null;
 
   // Build projections
   const projections: DCFProjectionYear[] = [];
@@ -71,20 +81,6 @@ export function calculateDCF(inputs: DCFInputs): DCFResult {
     previousFCF = fcf;
   }
 
-  // Terminal value: Gordon Growth Model on the last projected FCF
-  // Guard: WACC must exceed terminal growth (caller should validate, but be defensive)
-  if (discountRate <= terminalGrowthRate) {
-    return {
-      projections,
-      sumPVFCFs,
-      terminalValue: Infinity,
-      pvTerminalValue: Infinity,
-      enterpriseValue: Infinity,
-      fairValuePerShare: Infinity,
-      upsideDownside: Infinity,
-      signal: 'UNDERVALUED' as const,
-    };
-  }
 
   const lastFCF = previousFCF;
   const terminalValue = (lastFCF * (1 + terminalGrowthRate)) / (discountRate - terminalGrowthRate);

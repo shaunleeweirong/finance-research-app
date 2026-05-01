@@ -36,9 +36,17 @@ export interface PSValuationResult {
 
 /**
  * Run a full P/S-based valuation.
+ *
+ * Returns null when inputs are not valuation-meaningful — specifically when
+ * revenue or shares outstanding are non-positive. The PSCalculator UI already
+ * guards before calling, so this is defense-in-depth.
  */
-export function calculatePSValuation(inputs: PSValuationInputs): PSValuationResult {
+export function calculatePSValuation(inputs: PSValuationInputs): PSValuationResult | null {
   const { currentRevenue, sharesOutstanding, currentPrice, growthRates, terminalPS, discountRate } = inputs;
+
+  if (currentRevenue <= 0) return null;
+  if (sharesOutstanding <= 0) return null;
+
   const years = growthRates.length;
 
   const projections: PSProjectionYear[] = [];

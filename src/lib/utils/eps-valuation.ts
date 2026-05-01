@@ -32,9 +32,19 @@ export interface EPSValuationResult {
 
 /**
  * Run a full EPS-based valuation.
+ *
+ * Returns null for companies with non-positive current EPS — applying a
+ * positive growth rate to a negative EPS produces a more-negative projection
+ * each year, yielding a meaningless negative fair value and a forced
+ * OVERVALUED signal. The EPSCalculator UI already guards before calling,
+ * so this is defense-in-depth. Use the P/S model for unprofitable companies.
  */
-export function calculateEPSValuation(inputs: EPSValuationInputs): EPSValuationResult {
+export function calculateEPSValuation(inputs: EPSValuationInputs): EPSValuationResult | null {
   const { currentEPS, currentPrice, growthRates, terminalPE, discountRate } = inputs;
+
+  // EPS-based valuation is not meaningful for companies with non-positive earnings.
+  if (currentEPS <= 0) return null;
+
   const years = growthRates.length;
 
   const projections: EPSProjectionYear[] = [];

@@ -41,7 +41,7 @@ export default async function HomePage() {
 
   if (user) {
     const [plan, watchlistRows, indexQuotes, trendingQuotes] = await Promise.all([
-      getUserPlan(user.id),
+      getUserPlan(user.id, supabase),
       supabase
         .from('watchlist')
         .select('ticker, created_at')
