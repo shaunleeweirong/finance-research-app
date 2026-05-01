@@ -1,6 +1,6 @@
 import 'server-only';
 import { createClient } from '@/lib/supabase/server';
-import type { Plan } from '@/lib/auth/plans';
+import { toPlan, type Plan } from '@/lib/auth/plans';
 
 // Reuse the server client type so callers can pass either a cookie-bound
 // `createClient()` or the `createServiceClient()` instance without typing friction.
@@ -24,5 +24,5 @@ export async function getUserPlan(
     .eq('id', userId)
     .single();
 
-  return (profile?.plan as Plan) || 'free';
+  return toPlan(profile?.plan);
 }

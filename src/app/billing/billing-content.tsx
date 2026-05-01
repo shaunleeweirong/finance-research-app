@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { AppNav } from '@/components/app/app-nav';
 import { Check, CreditCard, ArrowRight } from 'lucide-react';
-import type { Plan } from '@/lib/auth/plans';
+import { toPlan, type Plan } from '@/lib/auth/plans';
 const PLAN_DETAILS: Record<Plan, { label: string; description: string }> = {
   free: { label: 'Free', description: 'Basic financial data access' },
   pro: { label: 'Pro', description: 'Advanced data for serious investors' },
@@ -59,7 +59,7 @@ export function BillingContent() {
           .select('plan')
           .eq('id', user.id)
           .single();
-        const userPlan = (profile?.plan as Plan) || 'free';
+        const userPlan = toPlan(profile?.plan);
         setPlan(userPlan);
 
         const response = await fetch('/api/stripe/subscription', { cache: 'no-store' });

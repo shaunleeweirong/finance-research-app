@@ -128,7 +128,7 @@ export default function PricingPage() {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
   }, []);
 
-  async function handleCheckout(plan: 'pro') {
+  async function handleCheckout(plan: 'pro' | 'premium') {
     if (!user) {
       window.location.assign('/sign-up');
       return;
@@ -400,7 +400,7 @@ export default function PricingPage() {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => handleCheckout('pro')}
+                      onClick={() => handleCheckout(tier.plan as 'pro' | 'premium')}
                       className={highlight ? 'mk-btn mk-btn-accent' : 'mk-btn mk-btn-primary'}
                       style={{ width: '100%', padding: '14px', fontSize: 14 }}
                     >
