@@ -55,5 +55,13 @@ begin
 end;
 $$;
 
+-- Lock down RPC exposure. PostgREST exposes public functions at
+-- /rest/v1/rpc/<name> by default; without revoke, an unauthenticated caller
+-- could poison anyone's bucket (UUIDs are guessable enough) and DoS the rate
+-- limiter itself. The API route uses the service-role client, which bypasses
+-- these grants, so revoking from public/anon/authenticated is safe.
+revoke execute on function public.check_rate_limit(uuid, text, int, int)
+  from public, anon, authenticated;
+
 comment on table public.rate_limit_buckets is 'Per-(user, scope) counters for fixed-window rate limiting. Service-role only.';
 comment on function public.check_rate_limit is 'Atomically increment a rate-limit bucket and return true if the caller has exceeded the limit in the current window.';
