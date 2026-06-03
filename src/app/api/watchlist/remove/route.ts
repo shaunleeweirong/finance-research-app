@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { isValidTicker } from '@/lib/utils/validation';
 import { canAccess } from '@/lib/auth/plans';
 import { getUserPlan } from '@/lib/auth/get-user-plan';
+import { isRateLimited } from '@/lib/auth/rate-limit';
 
 export async function POST(request: NextRequest) {
   // CSRF protection: validate Origin matches the server's own origin
@@ -21,6 +22,12 @@ export async function POST(request: NextRequest) {
   const userPlan = await getUserPlan(user.id, supabase);
   if (!canAccess(userPlan, 'watchlist:basic')) {
     return NextResponse.json({ error: 'Upgrade required' }, { status: 403 });
+  }
+
+  // Shared bucket with /add so a user can't double their budget by alternating.
+  const serviceClient = await createServiceClient();
+  if (await isRateLimited(serviceClient, user.id, 'watchlist_modify', 60, 60)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
   let payload: unknown;

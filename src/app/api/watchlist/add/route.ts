@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { isValidTicker } from '@/lib/utils/validation';
 import { canAccess } from '@/lib/auth/plans';
 import { getUserPlan } from '@/lib/auth/get-user-plan';
+import { isRateLimited } from '@/lib/auth/rate-limit';
 
 export async function POST(request: NextRequest) {
   // CSRF protection: validate Origin matches the server's own origin
@@ -21,6 +22,14 @@ export async function POST(request: NextRequest) {
   const userPlan = await getUserPlan(user.id, supabase);
   if (!canAccess(userPlan, 'watchlist:basic')) {
     return NextResponse.json({ error: 'Upgrade required' }, { status: 403 });
+  }
+
+  // 60 toggles per minute is far above any plausible UI use — the watchlist
+  // has a 6-item display cap — but protects the DB from a misbehaving client
+  // or a script-driven flood.
+  const serviceClient = await createServiceClient();
+  if (await isRateLimited(serviceClient, user.id, 'watchlist_modify', 60, 60)) {
+    return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
   let payload: unknown;

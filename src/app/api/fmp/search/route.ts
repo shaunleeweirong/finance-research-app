@@ -6,9 +6,12 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get('q');
 
-  if (!q || q.length < 1) {
+  // Upper bound matches what FMP itself will accept and prevents a single
+  // request from carrying a multi-MB payload (which Vercel would happily
+  // bill function time on before the upstream rejects it).
+  if (!q || q.length < 1 || q.length > 100) {
     return NextResponse.json(
-      { error: 'Query parameter "q" is required and must have at least 1 character' },
+      { error: 'Query parameter "q" is required and must be 1-100 characters' },
       { status: 400 }
     );
   }

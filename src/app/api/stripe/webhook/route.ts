@@ -162,6 +162,60 @@ export async function POST(req: NextRequest) {
       break;
     }
 
+    case 'customer.subscription.paused': {
+      // getEntitledPlan() above already maps `paused` → 'free' for
+      // customer.subscription.updated, so most paused subs are caught there.
+      // This case handles the rare delivery where Stripe emits the explicit
+      // paused event without a preceding updated event.
+      const subscription = event.data.object;
+      const customerId = subscription.customer as string;
+
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          plan: 'free',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('stripe_customer_id', customerId);
+
+      if (error) {
+        console.error('Webhook customer.subscription.paused sync failed:', JSON.stringify({
+          customerId,
+          code: error.code,
+          message: error.message,
+        }));
+        return NextResponse.json({ error: 'Profile sync failed' }, { status: 500 });
+      }
+      break;
+    }
+
+    case 'customer.deleted': {
+      // Hard delete of a Stripe customer. Clear the linkage so a future signup
+      // with the same email won't end up bound to a dead Stripe customer ID,
+      // and drop the plan since billing is no longer possible.
+      const customer = event.data.object as Stripe.Customer;
+
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({
+          plan: 'free',
+          stripe_customer_id: null,
+          stripe_subscription_id: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('stripe_customer_id', customer.id);
+
+      if (error) {
+        console.error('Webhook customer.deleted sync failed:', JSON.stringify({
+          customerId: customer.id,
+          code: error.code,
+          message: error.message,
+        }));
+        return NextResponse.json({ error: 'Profile sync failed' }, { status: 500 });
+      }
+      break;
+    }
+
     case 'invoice.payment_failed': {
       const invoice = event.data.object as Stripe.Invoice;
       const customerId = invoice.customer as string;
