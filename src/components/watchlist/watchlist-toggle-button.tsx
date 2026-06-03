@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -16,6 +16,14 @@ export function WatchlistToggleButton({
   const [isWatchlisted, setIsWatchlisted] = useState(initiallyWatchlisted);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Auto-clear transient errors (e.g. 429 rate-limit) so the message doesn't
+  // linger after the limit window resets.
+  useEffect(() => {
+    if (!error) return;
+    const timer = setTimeout(() => setError(null), 4000);
+    return () => clearTimeout(timer);
+  }, [error]);
 
   async function toggleWatchlist() {
     if (isSaving) return;
@@ -34,6 +42,9 @@ export function WatchlistToggleButton({
       });
 
       if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error('Slow down — try again in a moment');
+        }
         const data = (await response.json().catch(() => null)) as { error?: string } | null;
         throw new Error(data?.error ?? 'Unable to update watchlist');
       }
