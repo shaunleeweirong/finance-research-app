@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe, getPlanFromPriceId } from '@/lib/stripe';
 import { createServiceClient } from '@/lib/supabase/server';
+import { hashId } from '@/lib/utils/log-redact';
 import Stripe from 'stripe';
 
 function getEntitledPlan(subscription: Stripe.Subscription): 'free' | 'pro' | 'premium' {
@@ -85,7 +86,7 @@ export async function POST(req: NextRequest) {
 
       if (error) {
         console.error('Webhook checkout.session.completed sync failed:', JSON.stringify({
-          userId,
+          userId: hashId(userId),
           code: error.code,
           message: error.message,
         }));
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest) {
 
       if (lookupError) {
         console.error('Webhook customer.subscription.updated lookup failed:', JSON.stringify({
-          customerId,
+          customerId: hashId(customerId),
           code: lookupError.code,
           message: lookupError.message,
         }));
@@ -126,8 +127,8 @@ export async function POST(req: NextRequest) {
 
         if (error) {
           console.error('Webhook customer.subscription.updated sync failed:', JSON.stringify({
-            customerId,
-            profileId: profiles[0].id,
+            customerId: hashId(customerId),
+            profileId: hashId(profiles[0].id),
             code: error.code,
             message: error.message,
           }));
@@ -152,7 +153,7 @@ export async function POST(req: NextRequest) {
 
       if (error) {
         console.error('Webhook customer.subscription.deleted sync failed:', JSON.stringify({
-          customerId,
+          customerId: hashId(customerId),
           code: error.code,
           message: error.message,
         }));
@@ -167,7 +168,7 @@ export async function POST(req: NextRequest) {
 
       // Log for monitoring — in production, integrate email notifications
       console.error('Payment failed for customer:', JSON.stringify({
-        customerId,
+        customerId: hashId(customerId),
         invoiceId: invoice.id,
         attemptCount: invoice.attempt_count,
         amountDue: invoice.amount_due,
@@ -185,7 +186,7 @@ export async function POST(req: NextRequest) {
 
         if (error) {
           console.error('Webhook invoice.payment_failed downgrade failed:', JSON.stringify({
-            customerId,
+            customerId: hashId(customerId),
             code: error.code,
             message: error.message,
           }));

@@ -1,6 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe, PRICE_IDS } from '@/lib/stripe';
+import { hashId } from '@/lib/utils/log-redact';
 
 export async function POST(req: NextRequest) {
   // CSRF protection: validate Origin matches the server's own origin
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
 
   if (profileError) {
     console.error('Stripe checkout profile lookup failed:', JSON.stringify({
-      userId: user.id,
+      userId: hashId(user.id),
       code: profileError.code,
       message: profileError.message,
     }));
@@ -92,8 +93,8 @@ export async function POST(req: NextRequest) {
     if (updateError) {
       await getStripe().customers.del(customerId);
       console.error('Stripe customer linkage save failed:', JSON.stringify({
-        userId: user.id,
-        customerId,
+        userId: hashId(user.id),
+        customerId: hashId(customerId),
         code: updateError.code,
         message: updateError.message,
       }));

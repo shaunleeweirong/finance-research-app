@@ -46,6 +46,9 @@ next-env.d.ts
 
 # Playwright MCP
 .playwright-mcp/
+
+# IDE / editor configs — per-user, not project-wide
+.vscode/
 mobile-landing-page.png
 landing-*.png
 pricing-*.png
