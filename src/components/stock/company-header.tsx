@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import type { ReactNode } from 'react';
+import { ArrowDown, ArrowUp } from 'lucide-react';
 import { formatCurrency, formatPercent, formatLargeNumber } from '@/lib/utils/format';
 import type { FMPProfile, FMPQuote } from '@/lib/fmp/types';
 
@@ -44,7 +45,10 @@ export function CompanyHeader({ profile, quote, action }: CompanyHeaderProps) {
             <span className="font-mono text-2xl font-semibold text-foreground">
               {formatCurrency(quote.price)}
             </span>
-            <span className={`font-mono text-sm font-medium ${isPositive ? 'text-positive' : 'text-negative'}`}>
+            <span className={`font-mono text-sm font-medium inline-flex items-center gap-1 ${isPositive ? 'text-positive' : 'text-negative'}`}>
+              {isPositive
+                ? <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />
+                : <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" />}
               {isPositive ? '+' : ''}{formatCurrency(quote.change, 2)}
             </span>
             <span className={`font-mono text-sm font-medium ${isPositive ? 'text-positive' : 'text-negative'}`}>

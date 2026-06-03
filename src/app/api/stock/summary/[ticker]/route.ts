@@ -2,30 +2,35 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { getUserPlan } from '@/lib/auth/get-user-plan';
 import { canAccess } from '@/lib/auth/plans';
+import { getCompanyProfile } from '@/lib/fmp';
 
 const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY;
 const CACHE_TTL_DAYS = 7;
 
-// Soft per-user throttle: max 10 generation requests per user per minute.
-// NOTE: This Map is per-serverless-isolate and resets on cold starts. It is
-// NOT a durable rate limiter — for defense against cost abuse we rely on:
-//   1) Mandatory authentication (checked in-handler below)
-//   2) The 7-day Supabase cache (1 Perplexity call per ticker per week)
-//   3) `?refresh=true` gated to premium plan (paying customers)
-// For a durable limiter, migrate to Upstash Redis or Vercel KV.
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW_MS = 60_000;
+// Durable per-user throttle backed by the `check_rate_limit` SQL function
+// (migration 20260603). Limits each user to RATE_LIMIT_MAX summary generations
+// per RATE_LIMIT_WINDOW_SECONDS regardless of which serverless isolate handles
+// the request. Fails open on DB errors — a transient Supabase blip shouldn't
+// block legitimate users.
+const RATE_LIMIT_SCOPE = 'stock_summary';
+const RATE_LIMIT_WINDOW_SECONDS = 60;
 const RATE_LIMIT_MAX = 10;
 
-function isRateLimited(key: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(key);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+async function isRateLimited(
+  serviceClient: Awaited<ReturnType<typeof createServiceClient>>,
+  userId: string,
+): Promise<boolean> {
+  const { data, error } = await serviceClient.rpc('check_rate_limit', {
+    p_user_id: userId,
+    p_scope: RATE_LIMIT_SCOPE,
+    p_max: RATE_LIMIT_MAX,
+    p_window_seconds: RATE_LIMIT_WINDOW_SECONDS,
+  });
+  if (error) {
+    console.error('Rate limit RPC failed (failing open):', error.code, error.message);
     return false;
   }
-  entry.count++;
-  return entry.count > RATE_LIMIT_MAX;
+  return data === true;
 }
 
 interface Citation {
@@ -108,8 +113,10 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Rate limit per authenticated user
-  if (isRateLimited(user.id)) {
+  const supabase = await createServiceClient();
+
+  // Rate limit per authenticated user — durable, shared across isolates.
+  if (await isRateLimited(supabase, user.id)) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
@@ -119,12 +126,13 @@ export async function GET(
   const userPlan = await getUserPlan(user.id, userClient);
   const forceRefresh = refreshRequested && canAccess(userPlan, 'ai:copilot');
 
-  const rawName = new URL(_request.url).searchParams.get('name') ?? ticker;
-  const companyName = rawName.replace(/[^a-zA-Z0-9\s.,&'\-()]/g, '').slice(0, 100);
+  // Look up the company name server-side from FMP (24h-cached) rather than
+  // trusting a client-supplied ?name= query param. Prevents prompt-injection
+  // via newline-encoded URL params (e.g. ?name=Foo%0AIgnore%20above...).
+  const profile = await getCompanyProfile(ticker).catch(() => null);
+  const companyName = profile?.companyName ?? ticker;
 
   try {
-    const supabase = await createServiceClient();
-
     // Check cache — return if summary exists and is less than 7 days old
     if (!forceRefresh) {
       const { data: cached } = await supabase
